@@ -1,0 +1,50 @@
+A list of terms related to privacy attacks
+
+PRIVACY ATTACKS
+---------------
+reconstruction, 
+tracing,
+linkage,
+composition,
+membership,
+attribute,
+inference,
+re-identification,
+sampling,
+timing,
+knowledge,
+manipulation,
+differentiated,
+2014 Indosat
+
+
+Some papers to read
+
+Privacy Risk in Machine Learning: Analyzing the Connection to Overfitting
+https://arxiv.org/abs/1709.01604
+
+A Survey of Privacy Attacks in Machine Learning
+https://arxiv.org/abs/2007.07646
+
+LOGAN: Membership Inference Attacks Against Generative Models
+https://arxiv.org/abs/1705.07663  
+
+Reconstruction and Membership Inference Attacks against Generative Models 
+https://arxiv.org/abs/1906.03006  
+
+Alleviating Privacy Attacks via Causal Learning 
+https://arxiv.org/abs/1909.12732
+
+
+
+
+
+
+
+
+
+
+
+
+
+

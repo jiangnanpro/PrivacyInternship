@@ -1,0 +1,153 @@
+
+NIST Handprinted Forms and Characters Database
+
+https://www.nist.gov/srd/nist-special-database-19
+
+Over 800,000 (128x128 pixel) images with hand checked classifications
+
+Separate digit, upper and lower case: “0”- “9”, “A”- “Z” and “a”- “z”
+
+3600 writers
+
+User's Guide:
+
+https://s3.amazonaws.com/nist-srd/SD19/sd19_users_guide_edition_2.pdf
+
+The data is available in different hierarchies:
+
+###############################################
+
+In the "by_field" hierarchy:
+
+1) The data is partititioned into 7 directories:
+hsf_0  hsf_1  hsf_2  hsf_3  hsf_4  hsf_6  hsf_7
+
+2) Each of those has (up to) 4 directories:
+const  digit  lower  upper
+
+3) Each of those has the following subdirectories
+
+digit:
+30  31  32  33  34  35  36  37  38  39
+
+upper:
+41  43  45  47  49  4b  4d  4f  51  53  55  57  59
+42  44  46  48  4a  4c  4e  50  52  54  56  58  5a
+
+lower:
+61  63  65  67  69  6b  6d  6f  71  73  75  77  79
+62  64  66  68  6a  6c  6e  70  72  74  76  78  7a
+
+only hsf 0, 1, and 2 have const:
+41  43  45  48  4a  4d  4f  52  54  56  59  62  65  68  6e  72
+42  44  46  49  4c  4e  50  53  55  57  61  64  67  6c  71  74
+
+4) Each of those has image files, with files names xx_#####.png
+
+The first two characters xx are the same as the directory name. The five digits ##### go from 00000 to the number of images in the directory (minus 1).
+
+There seems to be no way to determine THE AUTHOR using this hierarchy!!
+
+###############################################
+
+In the "by_write" hierarchy:
+
+1) The data is partititioned into 7 directories:
+hsf_0  hsf_1  hsf_2  hsf_3  hsf_4  hsf_6  hsf_7
+
+2) Each of those has MANY subdirectories (one for each author), named f####_##
+
+The numbers ####_## seem to identify a unique author. I have not found any pattern in those numbers, so they may just be a randomly assigned identifier. If anyone learns some pattern in the numbers, please let me know.
+
+3) Each of those has up to 4 subdirectories:
+c####_##  d####_##  l####_##  u####_##
+
+4) These contain the image files for "const", "digit", "lower", and "upper"
+
+Filenames are x####_##_#####.png
+
+where the character x is either 'c', 'd', 'l', or 'u'
+
+the next characters ####_## correspond to the author
+
+the last ##### go from 00000 to the number of files in that directory (minus 1)
+
+There seems to be no way to determine THE LABEL using this hierarchy!!
+
+###############################################
+
+To save these images in smaller, easier to work with files, 
+and to have the labels AND authors for the images,
+I created four files for each partition:
+
+#################
+HSF_#_images.npy
+#################
+A numpy array of shape (N_images, 2048) that I created using numpy.packbits(), which
+
+"packs the elements of a binary-valued array into bits in a uint8 array"
+
+To unpack the bits of image file in row "row", reshape into a 128x128 raster, and show it using matplotlib:
+
+plt.imshow(np.unpackbits(images[row,:]).reshape((128,128)))
+
+#################
+HSF_#_labels.npy
+#################
+A numpy array of shape (N_images,) of uint8, containing the image label 0-9
+
+#################
+HSF_#_paths.pkl
+#################
+A dictionary
+  the keys are the full path and file name to the image in the "by_write" hierarchy
+
+The values are lists that correspond to those images.
+
+Items:
+0) file name in the "by_write" hierarchy
+1) author (i.e., name of the directory for the image in the "by_write" hierarchy)
+2) the full path and file name to the same image in the "by_field" hierarchy
+3) just the file name in the "by_field" hierarchy
+4) the label for the image, as a string
+5) this row index for the image in the numpy array
+
+#################
+HSF_#_byIMG.pkl
+#################
+A data frame
+  each row corresponds to a file in the "by_write" hierarchy
+
+Columns:
+0) the full path and file name to this image in the "by_field" hierarchy
+1) just the file name in the "by_field" hierarchy
+2) the label (0-9), converted to string
+3) the row index of this image in the numpy array, as a numpy.int64
+4) the full path and file name to the same image in the "by_write" hierarchy
+
+So this has basically the same information as the paths.pkl file, except the "author"
+
+I made these files first, from the "by_field" hierarchy, then used these files to create the
+paths.pkl files, by finding the same image in the "by_write" hierarchy.
+
+###############################################
+
+I count 3580 authors, and 402953 image files.
+
+Perhaps we will want to do the same for the upper and lower case characters in the future
+
+The script that I used to create these files is linkNist.py
+
+I also have a Jupyter notebook named linkNist.ipynb that explains/shows some of the above information.
+
+These are located on my Google share drive
+https://drive.google.com/drive/folders/1ZIpTjkjr0wZvDQZFYLPHitzERbMYhRoN?usp=sharing
+
+
+
+
+
+
+
+
+

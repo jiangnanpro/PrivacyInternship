@@ -1,0 +1,15 @@
+https://idea.rpi.edu/media/talks/2020/privacy-attacks-context-machine-learning
+
+There is one from Miao here https://idea.rpi.edu/media/talks/
+
+https://idea.rpi.edu/media/talks/?page=1
+
+https://humania.chalearn.org/
+
+---------------
+
+https://sites.google.com/chalearn.org/humania/internships-2021/privacy
+
+https://humania.chalearn.org/internships-2021/privacy
+
+I am sorry I means the original NIST dataset (not MNIST), which is somewhat bigger. https://www.nist.gov/srd/nist-special-database-19  It includes writer IDs, which we need.  There is also this variant https://www.nist.gov/itl/products-and-services/emnist-dataset but I am not sure it comes with writer IDs: to be verified. I think it does: https://arxiv.org/pdf/1702.05373.pdf
