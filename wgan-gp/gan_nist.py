@@ -263,6 +263,7 @@ if __name__ == '__main__':
     INPUT_WIDTH = 28
     OUTPUT_DIM = INPUT_HEIGHT*INPUT_WIDTH  # Number of pixels in NIST
 
+    DATAPATH = args.datapath
     BATCH_SIZE = args.batch_size
     MODE = args.mode
     CRITIC_ITERS = args.critic_iters
