@@ -102,7 +102,7 @@ def load(datapath, batch_size, test_batch_size, n_labelled=None):
         nist_generator((test_images, test_labels), test_batch_size, n_labelled)
     )
     
-def load_nist_images(images, num_images=None, resize=False, resize_width=28, resize_height=28):
+def load_nist_images(images, num_images=None, resize=True, resize_width=28, resize_height=28):
     preprocessed_images=[]
     if num_images is None:
         num_images = images.shape[0]
