@@ -252,7 +252,7 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', type=int, default=50, help='Size of the batch')
     parser.add_argument('--critic_iters', type=int, default=5, help='For WGAN and WGAN-GP, number of critic iters per gen iter')
     parser.add_argument('--dim', type=int, default=64, help='Model dimensionality')
-    parser.add_argument('--lambda', type=int, default=10, help='Gradient penalty lambda hyperparameter')
+    parser.add_argument('--lambda_val', type=int, default=10, help='Gradient penalty lambda hyperparameter')
     parser.add_argument('--mode', choices=['wgan-gp', 'wgan', 'dcgan'], help='Architecture and type of the generative model', default='wgan-gp')
     parser.add_argument('--datapath', help='path for NIST data.', required=True)
     #parser.add_argument('--model_path', help='path for saving model file.', required=True)
@@ -266,7 +266,7 @@ if __name__ == '__main__':
     BATCH_SIZE = args.batch_size
     MODE = args.mode
     CRITIC_ITERS = args.critic_iters
-    LAMBDA = args.lambda
+    LAMBDA = args.lambda_val
     DIM = args.dim
     ITERS = args.num_iters # How many generator iterations to train for
 
