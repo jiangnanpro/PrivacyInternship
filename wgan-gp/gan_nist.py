@@ -8,7 +8,6 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
-import sklearn.datasets
 import tensorflow as tf
 
 import tflib as lib
@@ -188,7 +187,7 @@ def train():
         samples = session.run(fixed_noise_samples)
         lib.save_images.save_images(
             samples.reshape((128, INPUT_WIDTH, INPUT_HEIGHT)), 
-            'samples_{}.png'.format(frame)
+            'samples_{}_{}_nist.png'.format(frame, MODE)
         )
 
     # Dataset iterator
@@ -254,7 +253,7 @@ if __name__ == '__main__':
     parser.add_argument('--dim', type=int, default=64, help='Model dimensionality')
     parser.add_argument('--lambda_val', type=int, default=10, help='Gradient penalty lambda hyperparameter')
     parser.add_argument('--mode', choices=['wgan-gp', 'wgan', 'dcgan'], help='Architecture and type of the generative model', default='wgan-gp')
-    parser.add_argument('--datapath', help='path for NIST data.', required=True)
+    parser.add_argument('--datapath', help='Path for NIST data.', required=True)
     #parser.add_argument('--model_path', help='path for saving model file.', required=True)
 
     args = parser.parse_args()

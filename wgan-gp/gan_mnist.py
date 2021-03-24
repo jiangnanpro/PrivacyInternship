@@ -194,7 +194,7 @@ def generate_image(frame, true_dist):
     samples = session.run(fixed_noise_samples)
     lib.save_images.save_images(
         samples.reshape((128, 28, 28)), 
-        'samples_{}.png'.format(frame)
+        'samples_{}_{}_mnist.png'.format(frame, MODE)
     )
 
 # Dataset iterator
