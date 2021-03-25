@@ -146,7 +146,7 @@ def train():
             gen_train_op = DPAdamGaussianOptimizer(
                 l2_norm_clip=L2_NORM_CLIP,
                 noise_multiplier=NOISE_MULTIPLIER,
-                num_microbatches=1,
+                num_microbatches=1, # Possible problem after reducing the size of cost vector in tensorflow-privacy. Check: https://github.com/tensorflow/privacy/issues/17
                 learning_rate=1e-4,
                 beta1=0.5,
                 beta2=0.9
