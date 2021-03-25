@@ -9,6 +9,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
+from tensorflow_privacy.privacy.optimizers.dp_optimizer import DPAdamGaussianOptimizer
 
 import tflib as lib
 import tflib.ops.linear
@@ -102,6 +103,7 @@ def train():
     gen_params = lib.params_with_name('Generator')
     disc_params = lib.params_with_name('Discriminator')
 
+
     if MODE == 'wgan':
         gen_cost = -tf.reduce_mean(disc_fake)
         disc_cost = tf.reduce_mean(disc_fake) - tf.reduce_mean(disc_real)
@@ -140,11 +142,20 @@ def train():
         gradient_penalty = tf.reduce_mean((slopes-1.)**2)
         disc_cost += LAMBDA*gradient_penalty
 
-        gen_train_op = tf.train.AdamOptimizer(
-            learning_rate=1e-4, 
-            beta1=0.5,
-            beta2=0.9
-        ).minimize(gen_cost, var_list=gen_params)
+        if TRAIN_WITH_DP:
+            gen_train_op = DPAdamGaussianOptimizer(
+                l2_norm_clip=L2_NORM_CLIP,
+                noise_multiplier=NOISE_MULTIPLIER,
+                learning_rate=1e-4,
+                beta1=0.5,
+                beta2=0.9)
+        else:
+            gen_train_op = tf.train.AdamOptimizer(
+                learning_rate=1e-4, 
+                beta1=0.5,
+                beta2=0.9
+            )
+        gen_train_op = gen_train_op.minimize(gen_cost, var_list=gen_params)
         disc_train_op = tf.train.AdamOptimizer(
             learning_rate=1e-4, 
             beta1=0.5, 
@@ -254,6 +265,10 @@ if __name__ == '__main__':
     parser.add_argument('--lambda_val', type=int, default=10, help='Gradient penalty lambda hyperparameter')
     parser.add_argument('--mode', choices=['wgan-gp', 'wgan', 'dcgan'], help='Architecture and type of the generative model', default='wgan-gp')
     parser.add_argument('--datapath', help='Path for NIST data.', required=True)
+    parser.add_argument('--dp', action='store_true', help='If passed, train with differential privacy')
+    parser.add_argument('--l2_norm_clip', type=float, default=1.0, help='Value used to clip the gradients. Only when training with Differential Privacy')
+    parser.add_argument('--noise_multiplier', type=float, default=1.1, help='Multiplier used to add noise to the gradients. Only when training with Differential Privacy')
+
     #parser.add_argument('--model_path', help='path for saving model file.', required=True)
 
     args = parser.parse_args()
@@ -269,5 +284,8 @@ if __name__ == '__main__':
     LAMBDA = args.lambda_val
     DIM = args.dim
     ITERS = args.num_iters # How many generator iterations to train for
+    TRAIN_WITH_DP = args.dp
+    L2_NORM_CLIP = args.l2_norm_clip
+    NOISE_MULTIPLIER = args.noise_multiplier
 
     train()
