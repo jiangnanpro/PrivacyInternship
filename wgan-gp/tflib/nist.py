@@ -111,10 +111,11 @@ def load_nist_images(images, num_images=None, resize=True, resize_width=28, resi
         unpack_image = numpy.abs(unpack_image-255) # change: background to black and digit to white 
         #cropped_image = crop_with_fixed_values(unpack_image)
         cropped_image = crop_with_bounding_box(unpack_image)
-        final_image = debinarize_image(cropped_image)
-        if resize:
-            final_image = cv.resize(final_image, (resize_width,resize_height), interpolation=4)
-        preprocessed_images.append(final_image)
+        if numpy.unique(cropped_image).shape[0]>1:
+            final_image = debinarize_image(cropped_image)
+            if resize:
+                final_image = cv.resize(final_image, (resize_width,resize_height), interpolation=4)
+            preprocessed_images.append(final_image)
     return numpy.array(preprocessed_images)
     
 # Smooth the image to add non-binarity
@@ -128,5 +129,6 @@ def crop_with_fixed_values(img, left = 30, top = 30, right = 95, bottom = 95):
 def crop_with_bounding_box(black_white_image):
     cv.threshold(black_white_image,0,255,cv.THRESH_BINARY+cv.THRESH_OTSU,black_white_image)
     contours, _ = cv.findContours(black_white_image, cv.RETR_EXTERNAL,cv.CHAIN_APPROX_NONE)
-    x, y, w, h = cv.boundingRect(contours[0])
+    for c in contours:
+        x, y, w, h = cv.boundingRect(c)
     return black_white_image[y:y+h, x:x+w]
