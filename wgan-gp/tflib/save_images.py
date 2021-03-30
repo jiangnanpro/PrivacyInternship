@@ -31,7 +31,7 @@ def save_images(X, save_path):
         img = np.zeros((int(h*nh), int(w*nw)))
 
     for n, x in enumerate(X):
-        j = n/nw
+        j = int(n/nw)
         i = n%nw
         if (img[int(j*h):int(j*h+h), int(i*w):int(i*w+w)].shape[0])==28:
             img[int(j*h):int(j*h+h), int(i*w):int(i*w+w)] = x
