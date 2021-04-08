@@ -1,3 +1,7 @@
 .ipynb_checkpoints/
 __pycache__/
 .vscode/
+models/
+check_gpu.py
+wgan-gp/inspect_checkpoint.py
+wgan-gp/samples*.png

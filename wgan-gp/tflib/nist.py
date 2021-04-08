@@ -30,15 +30,9 @@ def nist_generator(data, batch_size, n_labelled, limit=None):
         if n_labelled is not None:
             numpy.random.set_state(rng_state)
             numpy.random.shuffle(labelled)
-        
-        #print(images.shape)
-        #print(targets.shape)
-        
+                
         image_batches = images.reshape(-1, batch_size, int(images.shape[1]*images.shape[2]))
         target_batches = targets.reshape(-1, batch_size)
-        
-        #print(image_batches.shape)
-        #print(target_batches.shape)
 
         if n_labelled is not None:
             labelled_batches = labelled.reshape(-1, batch_size)
@@ -57,7 +51,7 @@ def load(datapath, batch_size, test_batch_size, n_labelled=None):
     train_num = 30000
     test_num = 10000
     
-    hsf = 0
+    hsf = 4
     with open(os.path.join(datapath, 'HSF_'+str(hsf)+'_images.npy'),'rb') as f:
         images = load_nist_images(numpy.load(f))
     with open(os.path.join(datapath,'HSF_'+str(hsf)+'_labels.npy'),'rb') as f:
@@ -71,30 +65,6 @@ def load(datapath, batch_size, test_batch_size, n_labelled=None):
     
     test_images = images[train_num+test_num:train_num+2*test_num]
     test_labels = images[train_num+test_num:train_num+2*test_num]
-    
-    '''
-    hsf = 0
-    with open(os.path.join(datapath, 'HSF_'+str(hsf)+'_images.npy'),'rb') as f:
-        train_images = numpy.load(f)
-    train_images = load_nist_images(train_images, train_num)
-    with open(os.path.join(datapath,'HSF_'+str(hsf)+'_labels.npy'),'rb') as f:
-        train_labels = numpy.load(f)[:train_num]
-   
-   
-    hsf = 1
-    with open(os.path.join(datapath, 'HSF_'+str(hsf)+'_images.npy'),'rb') as f:
-        test_images = numpy.load(f)
-    test_images = load_nist_images(test_images, test_num)
-    with open(os.path.join(datapath,'HSF_'+str(hsf)+'_labels.npy'),'rb') as f:
-        test_labels = numpy.load(f)[:test_num]
-        
-    hsf = 2
-    with open(os.path.join(datapath, 'HSF_'+str(hsf)+'_images.npy'),'rb') as f:
-        dev_images = numpy.load(f)
-    dev_images = load_nist_images(dev_images, test_num)
-    with open(os.path.join(datapath,'HSF_'+str(hsf)+'_labels.npy'),'rb') as f:
-        dev_labels = numpy.load(f)[:test_num]
-    '''
     
     return (
         nist_generator((train_images, train_labels), batch_size, n_labelled),

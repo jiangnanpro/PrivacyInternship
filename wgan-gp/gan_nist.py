@@ -9,7 +9,6 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
-from tensorflow_privacy.privacy.optimizers.dp_optimizer import DPAdamGaussianOptimizer
 
 import tflib as lib
 import tflib.ops.linear
@@ -143,6 +142,7 @@ def train():
         disc_cost += LAMBDA*gradient_penalty
 
         if TRAIN_WITH_DP:
+            from tensorflow_privacy.privacy.optimizers.dp_optimizer import DPAdamGaussianOptimizer
             gen_train_op = DPAdamGaussianOptimizer(
                 l2_norm_clip=L2_NORM_CLIP,
                 noise_multiplier=NOISE_MULTIPLIER,
@@ -168,17 +168,17 @@ def train():
 
     elif MODE == 'dcgan':
         gen_cost = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
-            disc_fake, 
-            tf.ones_like(disc_fake)
+            logits=disc_fake, 
+            labels=tf.ones_like(disc_fake)
         ))
 
         disc_cost =  tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
-            disc_fake, 
-            tf.zeros_like(disc_fake)
+            logits=disc_fake, 
+            labels=tf.zeros_like(disc_fake)
         ))
         disc_cost += tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
-            disc_real, 
-            tf.ones_like(disc_real)
+            logits=disc_real, 
+            labels=tf.ones_like(disc_real)
         ))
         disc_cost /= 2.
 
