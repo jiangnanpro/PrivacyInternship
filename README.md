@@ -19,7 +19,7 @@ Source: https://www.nist.gov/srd/nist-special-database-19
 Summary table
 
 | partition | writers | forms | digits | uppers | lowers | const | writer origin |
-| --- | --- | --- | --- |--- |--- |--- |--- |--- |--- |--- |---|
+| --- | --- | --- | --- |--- |--- |--- |--- |
 | hsf_0 | 0000-0499 | SD1 | SD3 | SD3 | SD3 | SD19 | Census Field |
 | hsf_1 | 0500-0999 | SD1 | SD3 | SD3 | SD3 | SD19 | Census Field |
 | hsf_2 | 1000-1499 | SD1 | SD3 | SD3 | SD3 | SD19 | Census Field |
