@@ -99,6 +99,18 @@ def crop_with_fixed_values(img, left = 30, top = 30, right = 95, bottom = 95):
 def crop_with_bounding_box(black_white_image):
     cv.threshold(black_white_image,0,255,cv.THRESH_BINARY+cv.THRESH_OTSU,black_white_image)
     contours, _ = cv.findContours(black_white_image, cv.RETR_EXTERNAL,cv.CHAIN_APPROX_NONE)
+    size = 0
     for c in contours:
         x, y, w, h = cv.boundingRect(c)
-    return black_white_image[y:y+h, x:x+w]
+        # take largest bounding box 
+        if h*w > size:
+            size = h*w
+            out_x = x
+            out_y = y
+            out_h = h
+            out_w = w
+    # Correct aspect-ratio for 1 digits
+    epsilon = 0
+    if (w/h) < 0.5:
+        epsilon = (int(h/w)+(int((w/h)*15)))
+    return black_white_image[out_y:out_y+out_h, out_x-epsilon:out_x+out_w+epsilon]
