@@ -13,6 +13,8 @@ python gan_nist.py --datapath /path/to/nist/data/folder
 The NIST data folder expected is the one produced by the script `linkNist.py` in the root directory.
 
 ### Attacks
+Based on the original implementation (available on this [repository](https://github.com/DingfanChen/GAN-Leaks)) of GAN-Leaks proposed by Chen et al. in [GAN-Leaks: A Taxonomy of Membership Inference Attacks against Generative Models](https://arxiv.org/abs/1909.03935).
+
 Full black-box:
 ```bash
 cd wgan-gp
