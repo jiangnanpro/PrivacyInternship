@@ -46,12 +46,11 @@ def nist_generator(data, batch_size, n_labelled, limit=None):
 
     return get_epoch
 
-def load(datapath, batch_size, test_batch_size, n_labelled=None):
+def load(datapath, batch_size, test_batch_size, n_labelled=None, hsf=4):
     
     train_num = 30000
     test_num = 10000
     
-    hsf = 4
     with open(os.path.join(datapath, 'HSF_'+str(hsf)+'_images.npy'),'rb') as f:
         images = load_nist_images(numpy.load(f))
     with open(os.path.join(datapath,'HSF_'+str(hsf)+'_labels.npy'),'rb') as f:

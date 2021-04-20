@@ -44,7 +44,7 @@ def LeakyReLULayer(name, n_in, n_out, inputs):
     )
     return LeakyReLU(output)
 
-def Generator(n_samples, noise=None):
+def Generator(n_samples, DIM=64, OUTPUT_DIM=28*28, MODE='wgan-gp', noise=None):
     if noise is None:
         noise = tf.random_normal([n_samples, 128])
 
@@ -70,7 +70,7 @@ def Generator(n_samples, noise=None):
 
     return tf.reshape(output, [-1, OUTPUT_DIM])
 
-def Discriminator(inputs):
+def Discriminator(inputs, INPUT_WIDTH=28, INPUT_HEIGHT=28, DIM =64, MODE='wgan-gp'):
     output = tf.reshape(inputs, [-1, 1, INPUT_WIDTH, INPUT_HEIGHT])
 
     output = lib.ops.conv2d.Conv2D('Discriminator.1',1,DIM,5,output,stride=2)

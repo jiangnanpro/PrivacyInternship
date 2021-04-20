@@ -5,3 +5,4 @@ models/
 check_gpu.py
 wgan-gp/inspect_checkpoint.py
 wgan-gp/samples*.png
+wgan-gp/samples/

@@ -18,58 +18,10 @@ import tflib.ops.deconv2d
 import tflib.save_images
 import tflib.nist
 import tflib.plot
+from tflib.utils import load_model_from_checkpoint
+from gan_nist import Discriminator, Generator
 
 lib.print_model_settings(locals().copy())
-
-def LeakyReLU(x, alpha=0.2):
-    return tf.maximum(alpha*x, x)
-
-def Generator(n_samples, noise=None):
-    if noise is None:
-        noise = tf.random_normal([n_samples, 128])
-
-    output = lib.ops.linear.Linear('Generator.Input', 128, 4*4*4*DIM, noise)
-    if MODE == 'wgan':
-        output = lib.ops.batchnorm.Batchnorm('Generator.BN1', [0], output)
-    output = tf.nn.relu(output)
-    output = tf.reshape(output, [-1, 4*DIM, 4, 4])
-
-    output = lib.ops.deconv2d.Deconv2D('Generator.2', 4*DIM, 2*DIM, 5, output)
-    if MODE == 'wgan':
-        output = lib.ops.batchnorm.Batchnorm('Generator.BN2', [0,2,3], output)
-    output = tf.nn.relu(output)
-
-    output = output[:,:,:7,:7]
-
-    output = lib.ops.deconv2d.Deconv2D('Generator.3', 2*DIM, DIM, 5, output)
-    if MODE == 'wgan':
-        output = lib.ops.batchnorm.Batchnorm('Generator.BN3', [0,2,3], output)
-
-    output = lib.ops.deconv2d.Deconv2D('Generator.5', DIM, 1, 5, output)
-    output = tf.nn.sigmoid(output)
-
-    return tf.reshape(output, [-1, OUTPUT_DIM])
-
-def Discriminator(inputs):
-    output = tf.reshape(inputs, [-1, 1, INPUT_WIDTH, INPUT_HEIGHT])
-
-    output = lib.ops.conv2d.Conv2D('Discriminator.1',1,DIM,5,output,stride=2)
-    output = LeakyReLU(output)
-
-    output = lib.ops.conv2d.Conv2D('Discriminator.2', DIM, 2*DIM, 5, output, stride=2)
-    if MODE == 'wgan':
-        output = lib.ops.batchnorm.Batchnorm('Discriminator.BN2', [0,2,3], output)
-    output = LeakyReLU(output)
-
-    output = lib.ops.conv2d.Conv2D('Discriminator.3', 2*DIM, 4*DIM, 5, output, stride=2)
-    if MODE == 'wgan':
-        output = lib.ops.batchnorm.Batchnorm('Discriminator.BN3', [0,2,3], output)
-    output = LeakyReLU(output)
-
-    output = tf.reshape(output, [-1, 4*4*4*DIM])
-    output = lib.ops.linear.Linear('Discriminator.Output', 4*4*4*DIM, 1, output)
-
-    return tf.reshape(output, [-1])
 
 def generate_image(noise_samples):
     samples = sess.run(noise_samples)
@@ -100,16 +52,15 @@ if __name__ == '__main__':
 
     # Create the variables for Generator and Discriminator
     
-    _ = Generator(1)
-    _ = Discriminator(tf.placeholder(tf.float32, shape=[1, OUTPUT_DIM]))
+    _ = Generator(1, DIM, INPUT_HEIGHT*INPUT_WIDTH, MODE)
+    _ = Discriminator(tf.placeholder(tf.float32, shape=[1, OUTPUT_DIM]), INPUT_WIDTH, INPUT_HEIGHT, DIM, MODE)
     
     # Add ops to save and restore all the variables.
     saver = tf.train.Saver()
 
     with tf.Session() as sess:
         # Restore variables from disk.
-        saver.restore(sess, tf.train.latest_checkpoint(os.path.join(MODEL_PATH, '')))
-        print("Model restored.")
+        _ = load_model_from_checkpoint(os.path.join(MODEL_PATH, ''), saver, sess)
         
         fixed_noise = tf.constant(np.random.normal(size=(128, 128)).astype('float32'))
         fixed_noise_samples = Generator(128, noise=fixed_noise)
