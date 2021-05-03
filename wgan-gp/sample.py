@@ -15,7 +15,7 @@ def parse_args():
                         help='Directory for saving the model checkpoints')
     parser.add_argument('--samples_path', type=str,
                         help='path for saving the generated data (default: save to model dir)')
-    parser.add_argument('--num_samples', type=int, default=200,
+    parser.add_argument('--num_samples', type=int, default=100,
                         help='num of samples')
     return parser.parse_args()
 
@@ -47,12 +47,14 @@ if __name__ == '__main__':
     samples = Generator(BS, noise=noise)
 
     ### set up session
-    sess = tf.Session()
-    init = tf.global_variables_initializer()
+    tf_config = tf.compat.v1.ConfigProto()
+    tf_config.gpu_options.allow_growth = True
+    sess = tf.compat.v1.Session(config=tf_config)
+    init = tf.compat.v1.global_variables()
     sess.run(init)
 
     ### set up saver for loading model
-    load_saver = tf.train.Saver([v for v in tf.global_variables()])
+    load_saver = tf.compat.v1.train.Saver([v for v in tf.compat.v1.global_variables()])
     _ = load_model_from_checkpoint(model_dir, load_saver, sess)
 
     ### get samples
@@ -64,12 +66,11 @@ if __name__ == '__main__':
         img_sample.append(img_batch)
     noise_sample = np.concatenate(noise_sample)[:num_samples]
     img_sample = np.concatenate(img_sample)[:num_samples]
-    print(img_sample[0].shape)
     img_sample = np.reshape(img_sample, [-1, 1, INPUT_WIDTH, INPUT_HEIGHT])
     save_image_grid(img_sample[:100], os.path.join(save_dir, 'samples.png'), [-1, 1], [10, 10])
 
     img_r01 = (img_sample + 1.) / 2.
-    img_r01 = img_r01.transpose(0, 2, 3, 1)  # NCHW => NHWC
+    #img_r01 = img_r01.transpose(0, 2, 3, 1)  # NCHW => NHWC
     np.savez_compressed(os.path.join(save_dir, 'generated.npz'),
                         noise=noise_sample,
                         img_r01=img_r01)

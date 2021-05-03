@@ -25,8 +25,10 @@ def parse_arguments():
                         help='directory for the Victim GAN model (save the generated.npz file)')
     parser.add_argument('--datapath', '-data', type=str,
                         help='the directory for the NIST data')
-    parser.add_argument('--data_num', '-dnum', type=int, default=100,
+    parser.add_argument('--data_num', '-dnum', type=int, default=1000,
                         help='the number of query images to be considered')
+    parser.add_argument('--same_census', '-sc', action='store_true', default=False,
+                        help='take test data from same census as training (high school) or different')
     return parser.parse_args()
 
 
@@ -109,11 +111,18 @@ def main():
     gen_feature = 2. * gen_feature - 1.
 
     ### load query images
-    with open(os.path.join(args.datapath, 'HSF_4_images.npy'),'rb') as f:
-        pos_query_imgs = load_nist_images(np.load(f), args.data_num)
+    if args.same_census:
+        with open(os.path.join(args.datapath, 'HSF_4_images.npy'),'rb') as f:
+            pos_query_imgs = load_nist_images(np.load(f), args.data_num)
 
-    with open(os.path.join(args.datapath, 'HSF_6_images.npy'),'rb') as f:
-        neg_query_imgs = load_nist_images(np.load(f), args.data_num)
+        with open(os.path.join(args.datapath, 'HSF_4_images.npy'),'rb') as f:
+            neg_query_imgs = load_nist_images(np.load(f))[40000:40000+args.data_num]
+    else:
+        with open(os.path.join(args.datapath, 'HSF_4_images.npy'),'rb') as f:
+            pos_query_imgs = load_nist_images(np.load(f), args.data_num)
+        with open(os.path.join(args.datapath, 'HSF_6_images.npy'),'rb') as f:
+            neg_query_imgs = load_nist_images(np.load(f), args.data_num)
+
 
     ### nearest neighbor search
     nn_obj = NearestNeighbors(n_neighbors=K, n_jobs=16)

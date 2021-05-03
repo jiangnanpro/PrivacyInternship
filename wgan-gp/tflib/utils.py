@@ -2,8 +2,12 @@ import os
 import numpy as np
 import fnmatch
 import PIL.Image
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 import tensorflow as tf
 
+NCOLS = 5
 
 def check_folder(dir):
     if not os.path.exists(dir):
@@ -134,3 +138,63 @@ def save_files(save_dir, file_name_list, array_list):
 
     for i in range(len(file_name_list)):
         np.save(os.path.join(save_dir, file_name_list[i]), array_list[i], allow_pickle=False)
+
+def inverse_transform(imgs):
+    '''
+    normalize the image to be of range [0,1]
+    :param imgs: input images
+    :return:
+        images with value range [0,1]
+    '''
+    imgs = (imgs + 1.) / 2.
+    return imgs
+
+
+def visualize_gt(imgs, save_dir):
+    '''
+    visualize the ground truth images and save
+    :param imgs: input images with value range [-1,1]
+    :param save_dir: directory for saving the results
+    '''
+    plt.figure(1)
+    num_imgs = len(imgs)
+    imgs = np.clip(inverse_transform(imgs), 0., 1.)
+    NROWS = int(np.ceil(float(num_imgs) / float(NCOLS)))
+    for i in range(num_imgs):
+        plt.subplot(NROWS, NCOLS, i + 1)
+        plt.imshow(imgs[i])
+        plt.axis('off')
+    plt.savefig(os.path.join(save_dir, 'input.png'))
+    plt.close()
+
+
+def visualize_progress(imgs, loss, save_dir, counter):
+    '''
+    visualize the optimization results and save
+    :param imgs: input images with value range [-1,1]
+    :param loss: the corresponding loss values
+    :param save_dir: directory for saving the results
+    :param counter: number of the function evaluation
+    :return:
+    '''
+    plt.figure(2)
+    num_imgs = len(imgs)
+    imgs = np.clip(inverse_transform(imgs), 0., 1.)
+    NROWS = int(np.ceil(float(num_imgs) / float(NCOLS)))
+    for i in range(num_imgs):
+        plt.subplot(NROWS, NCOLS, i + 1)
+        plt.imshow(imgs[i])
+        plt.title('loss: %.4f' % loss[i], fontdict={'fontsize': 8, 'color': 'blue'})
+        plt.axis('off')
+    plt.savefig(os.path.join(save_dir, 'output_%d.png' % counter))
+    plt.close()
+
+
+def visualize_samples(img_r01, save_dir):
+    plt.figure(figsize=(20, 20))
+    for i in range(64):
+        plt.subplot(8, 8, i + 1)
+        plt.imshow(img_r01[i])
+        plt.axis('off')
+    plt.tight_layout()
+    plt.savefig(os.path.join(save_dir, 'samples.png'))

@@ -1,4 +1,4 @@
-tensorflow-gpu==1.15.0
+tensorflow-gpu==1.14.0
 matplotlib==3.3.4
 numpy==1.19.5
 opencv-python==4.5.1.48
