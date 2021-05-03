@@ -1,5 +1,0 @@
-exp_name:test2
-gan_model_dir:models/wgan-gp_1Ksamples_50kiters
-datapath:/home/rafael/privacy_benchmark/data/nist
-data_num:1000
-same_census:False
