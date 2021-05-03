@@ -49,6 +49,8 @@ def parse_arguments():
                         help='the initialization techniques')
     parser.add_argument('--nn_dir', '-ndir', type=str,
                         help='directory for the fbb(KNN) results')
+    parser.add_argument('--results_dir', type=str, default='',
+                        help='directory to save the attack results')
     parser.add_argument('--distance', '-dist', type=str, default='l2', choices=['l2', 'l2-lpips'],
                         help='the objective function type')
     parser.add_argument('--if_norm_reg', '-reg', action='store_true', default=True,
@@ -70,7 +72,10 @@ def check_args(args):
     assert os.path.exists(args.gan_model_dir)
 
     ## set up save_dir
-    save_dir = os.path.join(os.path.dirname(__file__), 'results/pbb', args.exp_name)
+    if args.results_dir:
+        save_dir = os.path.join(args.results_dir, 'pbb', args.exp_name)
+    else:
+        save_dir = os.path.join(os.path.dirname(__file__), 'results/pbb', args.exp_name)
     check_folder(save_dir)
 
     ## store the parameters
