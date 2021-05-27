@@ -81,7 +81,7 @@ def load_nist_images(images, num_images=None, resize=True, resize_width=28, resi
         #cropped_image = crop_with_fixed_values(unpack_image)
         cropped_image = crop_with_bounding_box(unpack_image)
         if numpy.unique(cropped_image).shape[0]>1:
-            final_image = debinarize_image(cropped_image)
+            final_image = numpy.clip(debinarize_image(cropped_image),0,1)
             if resize:
                 final_image = cv.resize(final_image, (resize_width,resize_height), interpolation=4)
             preprocessed_images.append(final_image)
