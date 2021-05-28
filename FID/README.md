@@ -2,6 +2,7 @@
 
 This repository contains code accompanying the paper [GANs Trained by a Two Time-Scale Update Rule
 Converge to a Local Nash Equilibrium](https://arxiv.org/abs/1706.08500).
+The code can be found in [this repository](https://github.com/bioinf-jku/TTUR).
 
 ## Fréchet Inception Distance (FID)
 The FID is the performance measure used to evaluate the experiments in the paper. There, a detailed description can be found

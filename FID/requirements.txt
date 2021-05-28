@@ -1,0 +1,2 @@
+imageio==2.9.0
+tensorflow-gpu==1.15.0
