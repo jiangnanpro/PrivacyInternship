@@ -11,7 +11,7 @@ from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 import cv2
 
 def grey2RGB(gray):
-    return cv2.cvtColor(gray.astype('float32'), cv2.COLOR_GRAY2BGR)
+    return cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
 
 if __name__ == "__main__":
     parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
@@ -50,7 +50,7 @@ if __name__ == "__main__":
         with open(args.images_npy_path,'rb') as f:
             images_npy = np.load(f)
         for img in range(len(images_npy)):
-            unpack_image = np.unpackbits(images_npy[img,:]).reshape((128,128,1))*255
+            unpack_image = np.unpackbits(images_npy[img,:]).reshape((128,128,1))
             rgb_image = grey2RGB(unpack_image).reshape(128,128,3)
             images.append(rgb_image)
         images = np.array(images)
@@ -65,6 +65,6 @@ if __name__ == "__main__":
     print("calculte FID stats..", end=" ", flush=True)
     with tf.compat.v1.Session() as sess:
         sess.run(tf.compat.v1.global_variables_initializer())
-        mu, sigma = fid.calculate_activation_statistics(images, sess, batch_size=1)
+        mu, sigma = fid.calculate_activation_statistics(images, sess, batch_size=256)
         np.savez_compressed(args.output_path, mu=mu, sigma=sigma)
     print("finished")
