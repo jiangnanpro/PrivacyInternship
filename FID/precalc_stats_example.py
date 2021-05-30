@@ -8,10 +8,7 @@ import fid
 from scipy.misc import imread
 import tensorflow as tf
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
-import cv2
-
-def grey2RGB(gray):
-    return cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
+from PIL import Image
 
 if __name__ == "__main__":
     parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
@@ -50,8 +47,8 @@ if __name__ == "__main__":
         with open(args.images_npy_path,'rb') as f:
             images_npy = np.load(f)
         for img in range(len(images_npy)):
-            unpack_image = np.unpackbits(images_npy[img,:]).reshape((128,128,1))
-            rgb_image = grey2RGB(unpack_image).reshape(128,128,3)
+            unpack_image = np.unpackbits(images_npy[img,:]).reshape((128,128))
+            rgb_image = np.array(Image.fromarray(unpack_image).convert('RGB'))
             images.append(rgb_image)
         images = np.array(images)
 
