@@ -2,6 +2,7 @@ import tflib as lib
 
 import numpy as np
 import tensorflow as tf
+tf.compat.v1.random.set_random_seed(1234)
 
 _default_weightnorm = False
 def enable_default_weightnorm():

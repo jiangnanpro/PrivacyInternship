@@ -2,6 +2,7 @@ import tflib as lib
 
 import numpy as np
 import tensorflow as tf
+tf.compat.v1.random.set_random_seed(1234)
 
 def Batchnorm(name, axes, inputs, is_training=None, stats_iter=None, update_moving_stats=True, fused=True):
     if ((axes == [0,2,3]) or (axes == [0,2])) and fused==True:

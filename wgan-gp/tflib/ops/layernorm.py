@@ -2,6 +2,7 @@ import tflib as lib
 
 import numpy as np
 import tensorflow as tf
+tf.compat.v1.random.set_random_seed(1234)
 
 def Layernorm(name, norm_axes, inputs):
     mean, var = tf.nn.moments(inputs, norm_axes, keep_dims=True)

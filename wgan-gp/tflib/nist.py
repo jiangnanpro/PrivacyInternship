@@ -1,35 +1,32 @@
-import numpy
-
 import os
-import urllib.request
-import gzip
-import pickle
 import cv2 as cv
+
+import numpy as np
 
 def nist_generator(data, batch_size, n_labelled, limit=None):
     images, targets = data
 
-    rng_state = numpy.random.get_state()
-    numpy.random.shuffle(images)
-    numpy.random.set_state(rng_state)
-    numpy.random.shuffle(targets)
+    rng_state = np.random.get_state()
+    np.random.shuffle(images)
+    np.random.set_state(rng_state)
+    np.random.shuffle(targets)
     if limit is not None:
         print("WARNING ONLY FIRST {} NIST DIGITS".format(limit))
         images = images.astype('float32')[:limit]
         targets = targets.astype('int32')[:limit]
     if n_labelled is not None:
-        labelled = numpy.zeros(len(images), dtype='int32')
+        labelled = np.zeros(len(images), dtype='int32')
         labelled[:n_labelled] = 1
 
     def get_epoch():
-        rng_state = numpy.random.get_state()
-        numpy.random.shuffle(images)
-        numpy.random.set_state(rng_state)
-        numpy.random.shuffle(targets)
+        rng_state = np.random.get_state()
+        np.random.shuffle(images)
+        np.random.set_state(rng_state)
+        np.random.shuffle(targets)
 
         if n_labelled is not None:
-            numpy.random.set_state(rng_state)
-            numpy.random.shuffle(labelled)
+            np.random.set_state(rng_state)
+            np.random.shuffle(labelled)
                 
         image_batches = images.reshape(-1, batch_size, int(images.shape[1]*images.shape[2]))
         target_batches = targets.reshape(-1, batch_size)
@@ -38,11 +35,11 @@ def nist_generator(data, batch_size, n_labelled, limit=None):
             labelled_batches = labelled.reshape(-1, batch_size)
 
             for i in range(len(image_batches)):
-                yield (numpy.copy(image_batches[i]), numpy.copy(target_batches[i]), numpy.copy(labelled))
+                yield (np.copy(image_batches[i]), np.copy(target_batches[i]), np.copy(labelled))
 
         else:
             for i in range(len(image_batches)):
-                yield (numpy.copy(image_batches[i]), numpy.copy(target_batches[i]))
+                yield (np.copy(image_batches[i]), np.copy(target_batches[i]))
 
     return get_epoch
 
@@ -52,9 +49,9 @@ def load(datapath, batch_size, test_batch_size, n_labelled=None, hsf=4):
     test_num = 10000
     
     with open(os.path.join(datapath, 'HSF_'+str(hsf)+'_images.npy'),'rb') as f:
-        images = load_nist_images(numpy.load(f))
+        images = load_nist_images(np.load(f))
     with open(os.path.join(datapath,'HSF_'+str(hsf)+'_labels.npy'),'rb') as f:
-        labels = numpy.load(f)
+        labels = np.load(f)
     
     train_images = images[:train_num]
     train_labels = images[:train_num]
@@ -76,21 +73,21 @@ def load_nist_images(images, num_images=None, resize=True, resize_width=28, resi
     if num_images is None:
         num_images = images.shape[0]
     for img in range(num_images):
-        unpack_image = numpy.unpackbits(images[img,:]).reshape((128,128))*255
-        unpack_image = numpy.abs(unpack_image-255) # change: background to black and digit to white 
+        unpack_image = np.unpackbits(images[img,:]).reshape((128,128)).astype('int16')*255
+        unpack_image = np.abs(unpack_image-255) # change: background to black and digit to white 
         #cropped_image = crop_with_fixed_values(unpack_image)
         cropped_image = crop_with_bounding_box(unpack_image)
-        if numpy.unique(cropped_image).shape[0]>1:
-            final_image = numpy.clip(debinarize_image(cropped_image),0,1)
+        if np.unique(cropped_image).shape[0]>1:
+            final_image = np.clip(debinarize_image(cropped_image),0,1)
             if resize:
                 final_image = cv.resize(final_image, (resize_width,resize_height), interpolation=4)
-            preprocessed_images.append(final_image)
-    return numpy.array(preprocessed_images)
+            preprocessed_images.append(final_image.astype('uint8'))
+    return np.array(preprocessed_images)
     
 # Smooth the image to add non-binarity
 def debinarize_image(image, kernel_size=(5,5), sigmaX=3, sigmaY=3):
     blur_image = cv.GaussianBlur(image, kernel_size, sigmaX=sigmaX, sigmaY=sigmaY, borderType = cv.BORDER_DEFAULT)
-    return blur_image/numpy.max(blur_image)
+    return blur_image/np.max(blur_image)
     
 def crop_with_fixed_values(img, left = 30, top = 30, right = 95, bottom = 95):
     return img[top:bottom, left:right]

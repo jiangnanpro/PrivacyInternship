@@ -1,4 +1,4 @@
-import numpy
+import numpy as np
 
 import os
 import urllib.request
@@ -8,27 +8,27 @@ import pickle
 def mnist_generator(data, batch_size, n_labelled, limit=None):
     images, targets = data
 
-    rng_state = numpy.random.get_state()
-    numpy.random.shuffle(images)
-    numpy.random.set_state(rng_state)
-    numpy.random.shuffle(targets)
+    rng_state = np.random.get_state()
+    np.random.shuffle(images)
+    np.random.set_state(rng_state)
+    np.random.shuffle(targets)
     if limit is not None:
         print("WARNING ONLY FIRST {} MNIST DIGITS".format(limit))
         images = images.astype('float32')[:limit]
         targets = targets.astype('int32')[:limit]
     if n_labelled is not None:
-        labelled = numpy.zeros(len(images), dtype='int32')
+        labelled = np.zeros(len(images), dtype='int32')
         labelled[:n_labelled] = 1
 
     def get_epoch():
-        rng_state = numpy.random.get_state()
-        numpy.random.shuffle(images)
-        numpy.random.set_state(rng_state)
-        numpy.random.shuffle(targets)
+        rng_state = np.random.get_state()
+        np.random.shuffle(images)
+        np.random.set_state(rng_state)
+        np.random.shuffle(targets)
 
         if n_labelled is not None:
-            numpy.random.set_state(rng_state)
-            numpy.random.shuffle(labelled)
+            np.random.set_state(rng_state)
+            np.random.shuffle(labelled)
         
         image_batches = images.reshape(-1, batch_size, 784)
         target_batches = targets.reshape(-1, batch_size)
@@ -37,12 +37,12 @@ def mnist_generator(data, batch_size, n_labelled, limit=None):
             labelled_batches = labelled.reshape(-1, batch_size)
 
             for i in range(len(image_batches)):
-                yield (numpy.copy(image_batches[i]), numpy.copy(target_batches[i]), numpy.copy(labelled))
+                yield (np.copy(image_batches[i]), np.copy(target_batches[i]), np.copy(labelled))
 
         else:
 
             for i in range(len(image_batches)):
-                yield (numpy.copy(image_batches[i]), numpy.copy(target_batches[i]))
+                yield (np.copy(image_batches[i]), np.copy(target_batches[i]))
 
     return get_epoch
 

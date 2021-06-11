@@ -9,6 +9,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
+tf.compat.v1.random.set_random_seed(1234)
 
 import tflib as lib
 import tflib.ops.linear

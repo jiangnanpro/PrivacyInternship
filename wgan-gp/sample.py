@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import tensorflow as tf
+tf.compat.v1.random.set_random_seed(1234)
 import argparse
 import pickle
 

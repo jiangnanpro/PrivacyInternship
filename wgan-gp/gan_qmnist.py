@@ -194,11 +194,11 @@ def train():
         samples = session.run(fixed_noise_samples)
         lib.save_images.save_images(
             samples.reshape((128, INPUT_WIDTH, INPUT_HEIGHT)), 
-            os.path.join(OUTPUT_IMAGES_PATH,'samples_{}_{}_nist.png'.format(frame, MODE))
+            os.path.join(OUTPUT_IMAGES_PATH,'samples_{}_{}_qmnist.png'.format(frame, MODE))
         )
 
     # Dataset iterator
-    train_gen, dev_gen, test_gen = lib.nist.load(DATAPATH, BATCH_SIZE, BATCH_SIZE)
+    train_gen, dev_gen, test_gen = lib.qmnist.load(DATAPATH, BATCH_SIZE, BATCH_SIZE)
     def inf_train_gen():
         while True:
             for images,targets in train_gen():
@@ -237,7 +237,7 @@ def train():
             # Calculate dev loss, save weights and generate samples every 10000 iters
             if iteration % 10000 == 9999:
                 if MODEL_PATH:
-                    saver.save(session, os.path.join(MODEL_PATH,'{}_NIST'.format(MODE)))
+                    saver.save(session, os.path.join(MODEL_PATH,'{}_QMNIST'.format(MODE)))
                 dev_disc_costs = []
                 for images,_ in dev_gen():
                     _dev_disc_cost = session.run(
@@ -256,14 +256,14 @@ def train():
             lib.plot.tick()
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Train WGAN with nist dataset after preprocessing')
+    parser = argparse.ArgumentParser(description='Train WGAN with qmnist dataset after preprocessing')
     parser.add_argument('--num_iters', type=int, default=100000, help='Number of training iterations')
     parser.add_argument('--batch_size', type=int, default=50, help='Size of the batch')
     parser.add_argument('--critic_iters', type=int, default=8, help='For WGAN and WGAN-GP, number of critic iters per gen iter')
     parser.add_argument('--dim', type=int, default=64, help='Model dimensionality')
     parser.add_argument('--lambda_val', type=int, default=10, help='Gradient penalty lambda hyperparameter')
     parser.add_argument('--mode', choices=['wgan-gp', 'wgan', 'dcgan'], help='Architecture and type of the generative model', default='wgan-gp')
-    parser.add_argument('--datapath', help='Path for NIST data.', required=True)
+    parser.add_argument('--datapath', help='Path for .pickle with QMNIST data.', required=True)
     parser.add_argument('--dp', action='store_true', help='If passed, train with differential privacy')
     parser.add_argument('--l2_norm_clip', type=float, default=1.0, help='Value used to clip the gradients. Only when training with Differential Privacy')
     parser.add_argument('--noise_multiplier', type=float, default=1.1, help='Multiplier used to add noise to the gradients. Only when training with Differential Privacy')
@@ -274,7 +274,7 @@ if __name__ == '__main__':
 
     INPUT_HEIGHT = 28
     INPUT_WIDTH = 28
-    OUTPUT_DIM = INPUT_HEIGHT*INPUT_WIDTH  # Number of pixels in NIST
+    OUTPUT_DIM = INPUT_HEIGHT*INPUT_WIDTH  # Number of pixels in QMNIST
 
     DATAPATH = args.datapath
     BATCH_SIZE = args.batch_size
