@@ -47,7 +47,7 @@ def LeakyReLULayer(name, n_in, n_out, inputs):
 
 def Generator(n_samples, DIM=64, OUTPUT_DIM=28*28, MODE='wgan-gp', noise=None):
     if noise is None:
-        noise = tf.random_normal([n_samples, 128])
+        noise = tf.random.normal([n_samples, 128])
 
     output = lib.ops.linear.Linear('Generator.Input', 128, 4*4*4*DIM, noise)
     if MODE == 'wgan':
@@ -94,7 +94,7 @@ def Discriminator(inputs, INPUT_WIDTH=28, INPUT_HEIGHT=28, DIM =64, MODE='wgan-g
 
 
 def train():
-    real_data = tf.placeholder(tf.float32, shape=[BATCH_SIZE, OUTPUT_DIM])
+    real_data = tf.compat.v1.placeholder(tf.float32, shape=[BATCH_SIZE, OUTPUT_DIM])
     fake_data = Generator(BATCH_SIZE)
 
     disc_real = Discriminator(real_data)
@@ -130,7 +130,7 @@ def train():
         gen_cost = -tf.reduce_mean(disc_fake)
         disc_cost = tf.reduce_mean(disc_fake) - tf.reduce_mean(disc_real)
 
-        alpha = tf.random_uniform(
+        alpha = tf.random.uniform(
             shape=[BATCH_SIZE,1], 
             minval=0.,
             maxval=1.
@@ -153,13 +153,13 @@ def train():
                 beta2=0.9
                 )
         else:
-            gen_train_op = tf.train.AdamOptimizer(
+            gen_train_op = tf.compat.v1.train.AdamOptimizer(
                 learning_rate=1e-4, 
                 beta1=0.5,
                 beta2=0.9
             )
         gen_train_op = gen_train_op.minimize(gen_cost, var_list=gen_params)
-        disc_train_op = tf.train.AdamOptimizer(
+        disc_train_op = tf.compat.v1.train.AdamOptimizer(
             learning_rate=1e-4, 
             beta1=0.5, 
             beta2=0.9
@@ -212,10 +212,10 @@ def train():
                 yield images
 
     # Train loop
-    saver = tf.train.Saver()
-    with tf.Session() as session:
+    saver = tf.compat.v1.train.Saver()
+    with tf.compat.v1.Session() as session:
 
-        session.run(tf.initialize_all_variables())
+        session.run(tf.compat.v1.global_variables_initializer())
 
         gen = inf_train_gen()
 
@@ -265,7 +265,7 @@ def train():
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Train WGAN with qmnist dataset after preprocessing')
     parser.add_argument('--num_iters', type=int, default=100000, help='Number of training iterations')
-    parser.add_argument('--batch_size', type=int, default=50, help='Size of the batch')
+    parser.add_argument('--batch_size', type=int, default=10, help='Size of the batch')
     parser.add_argument('--critic_iters', type=int, default=8, help='For WGAN and WGAN-GP, number of critic iters per gen iter')
     parser.add_argument('--dim', type=int, default=64, help='Model dimensionality')
     parser.add_argument('--lambda_val', type=int, default=10, help='Gradient penalty lambda hyperparameter')

@@ -12,7 +12,6 @@ import tensorflow as tf
 tf.compat.v1.random.set_random_seed(1234)
 
 import tflib as lib
-import tflib as lib
 import tflib.ops.linear
 import tflib.ops.conv2d
 import tflib.ops.batchnorm
@@ -48,7 +47,7 @@ def LeakyReLULayer(name, n_in, n_out, inputs):
 
 def Generator(n_samples, DIM=64, OUTPUT_DIM=28*28, MODE='wgan-gp', noise=None):
     if noise is None:
-        noise = tf.random_normal([n_samples, 128])
+        noise = tf.random.normal([n_samples, 128])
 
     output = lib.ops.linear.Linear('Generator.Input', 128, 4*4*4*DIM, noise)
     if MODE == 'wgan':
@@ -95,7 +94,7 @@ def Discriminator(inputs, INPUT_WIDTH=28, INPUT_HEIGHT=28, DIM =64, MODE='wgan-g
 
 
 def train():
-    real_data = tf.placeholder(tf.float32, shape=[BATCH_SIZE, OUTPUT_DIM])
+    real_data = tf.compat.v1.placeholder(tf.float32, shape=[BATCH_SIZE, OUTPUT_DIM])
     fake_data = Generator(BATCH_SIZE)
 
     disc_real = Discriminator(real_data)
@@ -131,7 +130,7 @@ def train():
         gen_cost = -tf.reduce_mean(disc_fake)
         disc_cost = tf.reduce_mean(disc_fake) - tf.reduce_mean(disc_real)
 
-        alpha = tf.random_uniform(
+        alpha = tf.random.uniform(
             shape=[BATCH_SIZE,1], 
             minval=0.,
             maxval=1.
@@ -154,13 +153,13 @@ def train():
                 beta2=0.9
                 )
         else:
-            gen_train_op = tf.train.AdamOptimizer(
+            gen_train_op = tf.compat.v1.train.AdamOptimizer(
                 learning_rate=1e-4, 
                 beta1=0.5,
                 beta2=0.9
             )
         gen_train_op = gen_train_op.minimize(gen_cost, var_list=gen_params)
-        disc_train_op = tf.train.AdamOptimizer(
+        disc_train_op = tf.compat.v1.train.AdamOptimizer(
             learning_rate=1e-4, 
             beta1=0.5, 
             beta2=0.9

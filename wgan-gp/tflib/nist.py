@@ -74,8 +74,7 @@ def load_nist_images(images, num_images=None, resize=True, resize_width=28, resi
         num_images = images.shape[0]
     for img in range(num_images):
         unpack_image = np.unpackbits(images[img,:]).reshape((128,128)).astype('int16')*255
-        unpack_image = np.abs(unpack_image-255) # change: background to black and digit to white 
-        #cropped_image = crop_with_fixed_values(unpack_image)
+        unpack_image = np.abs(unpack_image-255).astype('uint8') # change: background to black and digit to white 
         cropped_image = crop_with_bounding_box(unpack_image)
         if np.unique(cropped_image).shape[0]>1:
             final_image = np.clip(debinarize_image(cropped_image),0,1)
