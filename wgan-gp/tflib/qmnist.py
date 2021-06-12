@@ -52,9 +52,9 @@ def load(datapath, batch_size, test_batch_size, n_labelled=None, dev_num = 10000
     test_labels = reserved_labels[dev_num:dev_num+test_num]
     
     return (
-        qmnist_generator((train_images, train_labels), batch_size, n_labelled),
-        qmnist_generator((dev_images, dev_labels), test_batch_size, n_labelled), 
-        qmnist_generator((test_images, test_labels), test_batch_size, n_labelled)
+        qmnist_generator((train_images/255, train_labels), batch_size, n_labelled),
+        qmnist_generator((dev_images/255, dev_labels), test_batch_size, n_labelled), 
+        qmnist_generator((test_images/255, test_labels), test_batch_size, n_labelled)
     )
     
 def load_qmnist_images_labels(pickle_file):
