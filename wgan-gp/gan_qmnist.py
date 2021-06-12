@@ -12,6 +12,13 @@ import tensorflow as tf
 tf.compat.v1.random.set_random_seed(1234)
 
 import tflib as lib
+import tflib.ops.linear
+import tflib.ops.conv2d
+import tflib.ops.batchnorm
+import tflib.ops.deconv2d
+import tflib.save_images
+import tflib.qmnist
+import tflib.plot
 
 lib.print_model_settings(locals().copy())
 
