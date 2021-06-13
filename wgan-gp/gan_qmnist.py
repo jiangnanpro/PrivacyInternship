@@ -265,7 +265,7 @@ def train():
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Train WGAN with qmnist dataset after preprocessing')
     parser.add_argument('--num_iters', type=int, default=100000, help='Number of training iterations')
-    parser.add_argument('--batch_size', type=int, default=10, help='Size of the batch')
+    parser.add_argument('--batch_size', type=int, default=200, help='Size of the batch')
     parser.add_argument('--critic_iters', type=int, default=8, help='For WGAN and WGAN-GP, number of critic iters per gen iter')
     parser.add_argument('--dim', type=int, default=64, help='Model dimensionality')
     parser.add_argument('--lambda_val', type=int, default=10, help='Gradient penalty lambda hyperparameter')
