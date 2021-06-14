@@ -1,105 +1,27 @@
 import os, sys
 sys.path.append(os.getcwd())
-
 import time
 import argparse
 
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
 tf.compat.v1.random.set_random_seed(1234)
 
 import tflib as lib
-import tflib.ops.linear
-import tflib.ops.conv2d
-import tflib.ops.batchnorm
-import tflib.ops.deconv2d
 import tflib.save_images
 import tflib.nist
 import tflib.plot
+from tflib.gan import Generator, Discriminator
 
 lib.print_model_settings(locals().copy())
 
-def LeakyReLU(x, alpha=0.2):
-    return tf.maximum(alpha*x, x)
-
-def ReLULayer(name, n_in, n_out, inputs):
-    output = lib.ops.linear.Linear(
-        name+'.Linear', 
-        n_in, 
-        n_out, 
-        inputs,
-        initialization='he'
-    )
-    return tf.nn.relu(output)
-
-def LeakyReLULayer(name, n_in, n_out, inputs):
-    output = lib.ops.linear.Linear(
-        name+'.Linear', 
-        n_in, 
-        n_out, 
-        inputs,
-        initialization='he'
-    )
-    return LeakyReLU(output)
-
-def Generator(n_samples, DIM=64, OUTPUT_DIM=28*28, MODE='wgan-gp', noise=None):
-    if noise is None:
-        noise = tf.random.normal([n_samples, 128])
-
-    output = lib.ops.linear.Linear('Generator.Input', 128, 4*4*4*DIM, noise)
-    if MODE == 'wgan':
-        output = lib.ops.batchnorm.Batchnorm('Generator.BN1', [0], output)
-    output = tf.nn.relu(output)
-    output = tf.reshape(output, [-1, 4*DIM, 4, 4])
-
-    output = lib.ops.deconv2d.Deconv2D('Generator.2', 4*DIM, 2*DIM, 5, output)
-    if MODE == 'wgan':
-        output = lib.ops.batchnorm.Batchnorm('Generator.BN2', [0,2,3], output)
-    output = tf.nn.relu(output)
-
-    output = output[:,:,:7,:7]
-
-    output = lib.ops.deconv2d.Deconv2D('Generator.3', 2*DIM, DIM, 5, output)
-    if MODE == 'wgan':
-        output = lib.ops.batchnorm.Batchnorm('Generator.BN3', [0,2,3], output)
-
-    output = lib.ops.deconv2d.Deconv2D('Generator.5', DIM, 1, 5, output)
-    output = tf.nn.sigmoid(output)
-
-    return tf.reshape(output, [-1, OUTPUT_DIM])
-
-def Discriminator(inputs, INPUT_WIDTH=28, INPUT_HEIGHT=28, DIM =64, MODE='wgan-gp'):
-    output = tf.reshape(inputs, [-1, 1, INPUT_WIDTH, INPUT_HEIGHT])
-
-    output = lib.ops.conv2d.Conv2D('Discriminator.1',1,DIM,5,output,stride=2)
-    output = LeakyReLU(output)
-
-    output = lib.ops.conv2d.Conv2D('Discriminator.2', DIM, 2*DIM, 5, output, stride=2)
-    if MODE == 'wgan':
-        output = lib.ops.batchnorm.Batchnorm('Discriminator.BN2', [0,2,3], output)
-    output = LeakyReLU(output)
-
-    output = lib.ops.conv2d.Conv2D('Discriminator.3', 2*DIM, 4*DIM, 5, output, stride=2)
-    if MODE == 'wgan':
-        output = lib.ops.batchnorm.Batchnorm('Discriminator.BN3', [0,2,3], output)
-    output = LeakyReLU(output)
-
-    output = tf.reshape(output, [-1, 4*4*4*DIM])
-    output = lib.ops.linear.Linear('Discriminator.Output', 4*4*4*DIM, 1, output)
-
-    return tf.reshape(output, [-1])
-
-
 def train():
     real_data = tf.compat.v1.placeholder(tf.float32, shape=[BATCH_SIZE, OUTPUT_DIM])
-    fake_data = Generator(BATCH_SIZE)
+    fake_data = Generator(BATCH_SIZE, DIM, OUTPUT_DIM, MODE)
 
-    disc_real = Discriminator(real_data)
-    disc_fake = Discriminator(fake_data)
-
+    disc_real = Discriminator(real_data, INPUT_WIDTH, INPUT_HEIGHT, DIM, MODE)
+    disc_fake = Discriminator(fake_data, INPUT_WIDTH, INPUT_HEIGHT, DIM, MODE)
+    
     gen_params = lib.params_with_name('Generator')
     disc_params = lib.params_with_name('Discriminator')
 
@@ -108,10 +30,10 @@ def train():
         gen_cost = -tf.reduce_mean(disc_fake)
         disc_cost = tf.reduce_mean(disc_fake) - tf.reduce_mean(disc_real)
 
-        gen_train_op = tf.train.RMSPropOptimizer(
+        gen_train_op = tf.compat.v1.train.RMSPropOptimizer(
             learning_rate=5e-5
         ).minimize(gen_cost, var_list=gen_params)
-        disc_train_op = tf.train.RMSPropOptimizer(
+        disc_train_op = tf.compat.v1.train.RMSPropOptimizer(
             learning_rate=5e-5
         ).minimize(disc_cost, var_list=disc_params)
 
@@ -183,11 +105,11 @@ def train():
         ))
         disc_cost /= 2.
 
-        gen_train_op = tf.train.AdamOptimizer(
+        gen_train_op = tf.compat.v1.train.AdamOptimizer(
             learning_rate=2e-4, 
             beta1=0.5
         ).minimize(gen_cost, var_list=gen_params)
-        disc_train_op = tf.train.AdamOptimizer(
+        disc_train_op = tf.compat.v1.train.AdamOptimizer(
             learning_rate=2e-4, 
             beta1=0.5
         ).minimize(disc_cost, var_list=disc_params)
@@ -263,7 +185,7 @@ def train():
             lib.plot.tick()
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Train WGAN with nist dataset after preprocessing')
+    parser = argparse.ArgumentParser(description='Train WGAN with NIST dataset after preprocessing')
     parser.add_argument('--num_iters', type=int, default=100000, help='Number of training iterations')
     parser.add_argument('--batch_size', type=int, default=50, help='Size of the batch')
     parser.add_argument('--critic_iters', type=int, default=8, help='For WGAN and WGAN-GP, number of critic iters per gen iter')

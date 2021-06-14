@@ -1,23 +1,16 @@
 import os, sys
 sys.path.append(os.getcwd())
-
 import time
 
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
 import numpy as np
-import sklearn.datasets
 import tensorflow as tf
+tf.compat.v1.random.set_random_seed(1234)
 
 import tflib as lib
-import tflib.ops.linear
-import tflib.ops.conv2d
-import tflib.ops.batchnorm
-import tflib.ops.deconv2d
 import tflib.save_images
 import tflib.mnist
 import tflib.plot
+from tflib.gan import Generator, Discriminator
 
 MODE = 'wgan-gp' # dcgan, wgan, or wgan-gp
 DIM = 64 # Model dimensionality
@@ -29,82 +22,11 @@ OUTPUT_DIM = 784 # Number of pixels in MNIST (28*28)
 
 lib.print_model_settings(locals().copy())
 
-def LeakyReLU(x, alpha=0.2):
-    return tf.maximum(alpha*x, x)
-
-def ReLULayer(name, n_in, n_out, inputs):
-    output = lib.ops.linear.Linear(
-        name+'.Linear', 
-        n_in, 
-        n_out, 
-        inputs,
-        initialization='he'
-    )
-    return tf.nn.relu(output)
-
-def LeakyReLULayer(name, n_in, n_out, inputs):
-    output = lib.ops.linear.Linear(
-        name+'.Linear', 
-        n_in, 
-        n_out, 
-        inputs,
-        initialization='he'
-    )
-    return LeakyReLU(output)
-
-def Generator(n_samples, noise=None):
-    if noise is None:
-        noise = tf.random_normal([n_samples, 128])
-
-    output = lib.ops.linear.Linear('Generator.Input', 128, 4*4*4*DIM, noise)
-    if MODE == 'wgan':
-        output = lib.ops.batchnorm.Batchnorm('Generator.BN1', [0], output)
-    output = tf.nn.relu(output)
-    output = tf.reshape(output, [-1, 4*DIM, 4, 4])
-
-    output = lib.ops.deconv2d.Deconv2D('Generator.2', 4*DIM, 2*DIM, 5, output)
-    if MODE == 'wgan':
-        output = lib.ops.batchnorm.Batchnorm('Generator.BN2', [0,2,3], output)
-    output = tf.nn.relu(output)
-
-    output = output[:,:,:7,:7]
-
-    output = lib.ops.deconv2d.Deconv2D('Generator.3', 2*DIM, DIM, 5, output)
-    if MODE == 'wgan':
-        output = lib.ops.batchnorm.Batchnorm('Generator.BN3', [0,2,3], output)
-    output = tf.nn.relu(output)
-
-    output = lib.ops.deconv2d.Deconv2D('Generator.5', DIM, 1, 5, output)
-    output = tf.nn.sigmoid(output)
-
-    return tf.reshape(output, [-1, OUTPUT_DIM])
-
-def Discriminator(inputs):
-    output = tf.reshape(inputs, [-1, 1, 28, 28])
-
-    output = lib.ops.conv2d.Conv2D('Discriminator.1',1,DIM,5,output,stride=2)
-    output = LeakyReLU(output)
-
-    output = lib.ops.conv2d.Conv2D('Discriminator.2', DIM, 2*DIM, 5, output, stride=2)
-    if MODE == 'wgan':
-        output = lib.ops.batchnorm.Batchnorm('Discriminator.BN2', [0,2,3], output)
-    output = LeakyReLU(output)
-
-    output = lib.ops.conv2d.Conv2D('Discriminator.3', 2*DIM, 4*DIM, 5, output, stride=2)
-    if MODE == 'wgan':
-        output = lib.ops.batchnorm.Batchnorm('Discriminator.BN3', [0,2,3], output)
-    output = LeakyReLU(output)
-
-    output = tf.reshape(output, [-1, 4*4*4*DIM])
-    output = lib.ops.linear.Linear('Discriminator.Output', 4*4*4*DIM, 1, output)
-
-    return tf.reshape(output, [-1])
-
 real_data = tf.placeholder(tf.float32, shape=[BATCH_SIZE, OUTPUT_DIM])
-fake_data = Generator(BATCH_SIZE)
+fake_data = Generator(BATCH_SIZE, DIM, OUTPUT_DIM, MODE)
 
-disc_real = Discriminator(real_data)
-disc_fake = Discriminator(fake_data)
+disc_real = Discriminator(real_data, DIM=DIM, MODE=MODE)
+disc_fake = Discriminator(fake_data, DIM=DIM, MODE=MODE)
 
 gen_params = lib.params_with_name('Generator')
 disc_params = lib.params_with_name('Discriminator')

@@ -14,7 +14,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'too
 from tflib.utils import load_model_from_checkpoint, check_folder, visualize_gt, visualize_progress, save_files
 from tflib.nist import load_nist_images
 #import lpips_tf
-from gan_nist import Generator
+from tflib.gan import Generator
 
 
 #sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../gan_models/wgangp'))

@@ -1,14 +1,15 @@
-import numpy as np
 import os
 import sys
 import pickle
 import argparse
+
+import numpy as np
+from sklearn.neighbors import NearestNeighbors
 from tqdm import tqdm
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from tflib.utils import *
 from tflib.nist import load_nist_images
-from sklearn.neighbors import NearestNeighbors
 
 ### Hyperparameters
 K = 5

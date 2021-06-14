@@ -12,13 +12,23 @@ python gan_nist.py --datapath /path/to/nist/data/folder
 ```
 The NIST data folder expected is the one produced by the script `linkNist.py` in the root directory.
 
-### Attacks
+### Attack
 Based on the original implementation (available on this [repository](https://github.com/DingfanChen/GAN-Leaks)) of GAN-Leaks proposed by Chen et al. in [GAN-Leaks: A Taxonomy of Membership Inference Attacks against Generative Models](https://arxiv.org/abs/1909.03935).
 
-Full black-box:
+
+WARNING: to use the scripts, tensorflow v1.14.0 is needed. To create a new environment and install all dependencies:
+
+```bash
+conda create --name ganleaks-tf python=3.6
+conda activate ganleaks-tf
+conda install tensorflow-gpu=1.14.0
+pip install six tqdm pillow matplotlib scikit-learn
+```
+
+Example with full black-box:
 ```bash
 cd wgan-gp
-python sample.py --model_path "models/model_dir"
+python sample.py --model_path "models/model_dir" # Create synthetic samples from the generative model
 python attacks/fbb.py -name test1 -gdir "models/model_dir" -data "/path/to/nist/data/folder"
 python attacks/eval_roc.py -ldir "attacks/results/fbb/test1" --attack_type fbb
 ```
@@ -42,3 +52,23 @@ Summary table
 | hsf_8 | 4100-4169 | SD19 | † | † | † | † | Census MD |
 
 SD3, SD7 are Special Databases 3 and 7 released as as the training and testing materials for the First Census OCR Systems Conference. A † indicates that those fields were completed but not processed at the time of the CD release. A ø indicates that the field was never filled out.
+
+## QMNIST Data
+
+Reconstruction of the original MNIST dataset using NIST data. [Original paper](https://arxiv.org/pdf/1905.10498.pdf) by Chhavi Yadav and Léon Bottou.
+
+The images are numpy arrays with shape (n_images,28,28), with values from 0 to 255 (dtype=uint8).
+The targets are arrays with shape (n_images,8). Each of the 8 values contain the following information:
+
+| Position | Description  | Range |
+|:------:|--------------|-------|
+| 0 | Character class | 0 to 9
+| 1 | NIST HSF series | 0, 1, 2, 3, 4, 6, or 7
+| 2 | NIST writer ID | 0-2599 and 3100-4099  
+| 3 | Digit index for this writer | 0 to 146
+| 4 | NIST class code | 30-39
+| 5 | Global NIST digit index | 0 to 402952
+| 6 | Duplicate | 0
+| 7 | Unused | 0
+
+Source: [Original QMNIST repository](https://github.com/facebookresearch/qmnist)

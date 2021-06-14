@@ -5,7 +5,7 @@ tf.compat.v1.random.set_random_seed(1234)
 import argparse
 import pickle
 
-from gan_nist import Generator
+from tflib.gan import Generator
 from tflib.utils import load_model_from_checkpoint, save_image_grid
 
 
@@ -44,7 +44,7 @@ if __name__ == '__main__':
         Z_DIM = 128
 
     ### define the varialbe for generating samples
-    noise = tf.random_normal(shape=(BS, Z_DIM), dtype=tf.float32)
+    noise = tf.random.normal(shape=(BS, Z_DIM), dtype=tf.float32)
     samples = Generator(BS, noise=noise)
 
     ### set up session
