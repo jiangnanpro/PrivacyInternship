@@ -10,7 +10,6 @@ from tqdm import tqdm
 
 ### import tools
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'tools/lpips_tensorflow'))
 from tflib.utils import load_model_from_checkpoint, check_folder, visualize_gt, visualize_progress, save_files
 from tflib.nist import load_nist_images
 #import lpips_tf
@@ -203,12 +202,10 @@ def main():
     config_path = os.path.join(load_dir, 'params.pkl')
     if os.path.exists(config_path):
         config = pickle.load(open(config_path, 'rb'))
-        OUTPUT_SIZE = config['OUTPUT_SIZE']
         Z_DIM = config['Z_DIM']
     else:
         INPUT_WIDTH = 28
         INPUT_HEIGHT = 28
-        OUTPUT_SIZE = INPUT_WIDTH*INPUT_HEIGHT
         Z_DIM = 128
 
     ### open session
@@ -226,19 +223,16 @@ def main():
         init_val = {'pos': None, 'neg': None}
         if args.initialize_type == 'zero':
             z = tf.Variable(tf.zeros([BATCH_SIZE, Z_DIM], tf.float32), name='latent_z')
-
         elif args.initialize_type == 'random':
             np.random.seed(RANDOM_SEED)
             init_val_np = np.random.normal(size=(Z_DIM,))
             init = np.tile(init_val_np, (BATCH_SIZE, 1)).astype(np.float32)
             z = tf.Variable(init, name='latent_z')
-
         elif args.initialize_type == 'nn':
             init_val['pos'] = np.load(os.path.join(args.nn_dir, 'pos_z.npy'))[:, 0, :]
             init_val['neg'] = np.load(os.path.join(args.nn_dir, 'neg_z.npy'))[:, 0, :]
             init_val_ph = tf.placeholder(dtype=tf.float32, name='init_ph', shape=(BATCH_SIZE, Z_DIM))
             z = tf.Variable(init_val_ph, name='latent_z')
-
         else:
             raise NotImplementedError
 
