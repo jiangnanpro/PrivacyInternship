@@ -303,7 +303,7 @@ def main():
                 with open(os.path.join(args.datapath, 'HSF_6_images.npy'),'rb') as f:
                     neg_query_imgs = load_nist_images(np.load(f), args.data_num)
         elif args.dataset=='qmnist':
-            pos_query_imgs, neg_query_imgs, _, _ = load_qmnist_attacker_evaluation_set(args.datapath)
+            pos_query_imgs, neg_query_imgs, _, _ = load_qmnist_attacker_evaluation_set(args.datapath, args.data_num, args.data_num)
 
 
         ### run the optimization on query images
