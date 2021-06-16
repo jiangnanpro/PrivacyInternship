@@ -27,6 +27,8 @@ def parse_arguments():
                         help='directory for the Victim GAN model (save the generated.npz file)')
     parser.add_argument('--datapath', '-data', type=str,
                         help='the directory for the data')
+    parser.add_argument('--results_dir', type=str, default='',
+                        help='directory to save the attack results')
     parser.add_argument('--data_num', '-dnum', type=int, default=1000,
                         help='the number of query images to be considered')
     parser.add_argument('--dataset', choices=['qmnist', 'mnist', 'nist', 'emnist'], 
@@ -46,7 +48,10 @@ def check_args(args):
     assert os.path.exists(args.gan_model_dir)
 
     ## set up save_dir
-    save_dir = os.path.join(os.path.dirname(__file__), 'results/fbb', args.exp_name)
+    if args.results_dir:
+        save_dir = os.path.join(args.results_dir, 'fbb', args.exp_name)
+    else:
+        save_dir = os.path.join(os.path.dirname(__file__), 'results/fbb', args.exp_name)
     check_folder(save_dir)
 
     ## store the parameters
