@@ -10,9 +10,10 @@ from tqdm import tqdm
 
 ### import tools
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'tools/lpips_tensorflow'))
+#sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'tools/lpips_tensorflow'))
 from tflib.utils import load_model_from_checkpoint, check_folder, visualize_gt, visualize_progress, save_files
 from tflib.nist import load_nist_images
+from tflib.qmnist import load_qmnist_attacker_evaluation_set
 #import lpips_tf
 from gan_nist import Generator
 
@@ -57,8 +58,10 @@ def parse_arguments():
                         help='enable the norm regularizer')
     parser.add_argument('--maxiter', type=int, default=10,
                         help='the maximum number of iterations')
+    parser.add_argument('--dataset', choices=['qmnist', 'mnist', 'nist', 'emnist'], 
+                        help='Dataset used to train the model')
     parser.add_argument('--same_census', '-sc', action='store_true', default=False,
-                        help='take test data from same census as training (high school) or different')
+                        help='take test data from same census as training (high school) or different. Only when dataset is NIST.')
     return parser.parse_args()
 
 
@@ -293,18 +296,19 @@ def main():
                                                      options={'maxiter': args.maxiter})
 
         ### load query images
-        if args.same_census:
-            with open(os.path.join(args.datapath, 'HSF_4_images.npy'),'rb') as f:
-                pos_query_imgs = load_nist_images(np.load(f), args.data_num)
-
-            with open(os.path.join(args.datapath, 'HSF_4_images.npy'),'rb') as f:
-                neg_query_imgs = load_nist_images(np.load(f))[30000:30000+args.data_num]
-        else:
-            with open(os.path.join(args.datapath, 'HSF_4_images.npy'),'rb') as f:
-                pos_query_imgs = load_nist_images(np.load(f), args.data_num)
-
-            with open(os.path.join(args.datapath, 'HSF_6_images.npy'),'rb') as f:
-                neg_query_imgs = load_nist_images(np.load(f), args.data_num)
+        if args.dataset=='nist':
+            if args.same_census:
+                with open(os.path.join(args.datapath, 'HSF_4_images.npy'),'rb') as f:
+                    pos_query_imgs = load_nist_images(np.load(f), args.data_num)
+                with open(os.path.join(args.datapath, 'HSF_4_images.npy'),'rb') as f:
+                    neg_query_imgs = load_nist_images(np.load(f))[30000:30000+args.data_num]
+            else:
+                with open(os.path.join(args.datapath, 'HSF_4_images.npy'),'rb') as f:
+                    pos_query_imgs = load_nist_images(np.load(f), args.data_num)
+                with open(os.path.join(args.datapath, 'HSF_6_images.npy'),'rb') as f:
+                    neg_query_imgs = load_nist_images(np.load(f), args.data_num)
+        elif args.dataset=='qmnist':
+            pos_query_imgs, neg_query_imgs, _, _ = load_qmnist_attacker_evaluation_set(args.datapath)
 
         ### run the optimization on query images
         query_loss, query_z, query_xhat = optimize_z(sess, z, x, x_hat,

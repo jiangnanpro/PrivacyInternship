@@ -12,6 +12,7 @@ from tqdm import tqdm
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from tflib.utils import load_model_from_checkpoint, check_folder, visualize_gt, visualize_progress, save_files
 from tflib.nist import load_nist_images
+from tflib.qmnist import load_qmnist_attacker_evaluation_set
 #import lpips_tf
 from tflib.gan import Generator
 
@@ -35,7 +36,7 @@ def parse_arguments():
     parser.add_argument('--gan_model_dir', '-gdir', type=str, required=True,
                         help='directory for the Victim GAN model')
     parser.add_argument('--datapath', '-data', type=str,
-                        help='the directory for the NIST data')
+                        help='the directory for the data')
     parser.add_argument('--data_num', '-dnum', type=int, default=1000,
                         help='the number of query images to be considered')
     parser.add_argument('--batch_size', '-bs', type=int, default=200,
@@ -53,9 +54,11 @@ def parse_arguments():
     parser.add_argument('--if_norm_reg', '-reg', action='store_true', default=True,
                         help='enable the norm regularizer')
     parser.add_argument('--same_census', '-sc', action='store_true', default=False,
-                        help='take test data from same census as training (high school) or different')
+                        help='take test data from same census as training (high school) or different. Only when dataset is NIST')
     parser.add_argument('--maxfunc', '-mf', type=int, default=1000,
                         help='the maximum number of function calls')
+    parser.add_argument('--dataset', choices=['qmnist', 'mnist', 'nist', 'emnist'], 
+                        help='Dataset used to train the model')
     return parser.parse_args()
 
 
@@ -254,7 +257,6 @@ def main():
             loss_l2 = tf.reduce_mean(tf.square(x_hat - x), axis=[1, 2, 3])
             vec_loss = loss_l2
             vec_losses = {'l2': loss_l2}
-
         elif args.distance == 'l2-lpips':
             print('use distance: lpips + l2')
             loss_l2 = tf.reduce_mean(tf.square(x_hat - x), axis=[1, 2, 3])
@@ -282,18 +284,22 @@ def main():
                                                      options={'maxfun': args.maxfunc})
 
         ### load query images
-        if args.same_census:
-            with open(os.path.join(args.datapath, 'HSF_4_images.npy'),'rb') as f:
-                pos_query_imgs = load_nist_images(np.load(f), args.data_num)
+        if args.dataset=='nist':
+            if args.same_census:
+                with open(os.path.join(args.datapath, 'HSF_4_images.npy'),'rb') as f:
+                    pos_query_imgs = load_nist_images(np.load(f), args.data_num)
 
-            with open(os.path.join(args.datapath, 'HSF_4_images.npy'),'rb') as f:
-                neg_query_imgs = load_nist_images(np.load(f))[30000:30000+args.data_num]
-        else:
-            with open(os.path.join(args.datapath, 'HSF_4_images.npy'),'rb') as f:
-                pos_query_imgs = load_nist_images(np.load(f), args.data_num)
+                with open(os.path.join(args.datapath, 'HSF_4_images.npy'),'rb') as f:
+                    neg_query_imgs = load_nist_images(np.load(f))[30000:30000+args.data_num]
+            else:
+                with open(os.path.join(args.datapath, 'HSF_4_images.npy'),'rb') as f:
+                    pos_query_imgs = load_nist_images(np.load(f), args.data_num)
 
-            with open(os.path.join(args.datapath, 'HSF_6_images.npy'),'rb') as f:
-                neg_query_imgs = load_nist_images(np.load(f), args.data_num)
+                with open(os.path.join(args.datapath, 'HSF_6_images.npy'),'rb') as f:
+                    neg_query_imgs = load_nist_images(np.load(f), args.data_num)
+        elif args.dataset=='qmnist':
+            pos_query_imgs, neg_query_imgs, _, _ = load_qmnist_attacker_evaluation_set(args.datapath)
+
 
         ### run the optimization on query images
         query_loss, query_z, query_xhat = optimize_z(sess, z, x, x_hat,

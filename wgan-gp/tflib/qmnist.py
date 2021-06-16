@@ -56,6 +56,19 @@ def load(datapath, batch_size, test_batch_size, n_labelled=None, dev_num = 10000
         qmnist_generator((dev_images/255, dev_labels), test_batch_size, n_labelled), 
         qmnist_generator((test_images/255, test_labels), test_batch_size, n_labelled)
     )
+
+def load_qmnist_attacker_evaluation_set(pickle_file, pos_size=1000, neg_size=10000):
+    x_private, x_reserved, y_private, y_reserved = load_qmnist_images_labels(pickle_file)
+
+    rng = np.random.RandomState(2021)
+    pos_index_seq = rng.choice(range(len(x_private)), size=pos_size, replace=False)
+    neg_index_seq = rng.choice(range(len(x_reserved)), size=neg_size, replace=False)
+
+    pos_images = x_private[pos_index_seq]
+    pos_labels = y_private[pos_index_seq]
+    neg_images = x_reserved[neg_index_seq]
+    neg_labels = y_reserved[neg_index_seq]
+    return pos_images, neg_images, pos_labels, neg_labels
     
 def load_qmnist_images_labels(pickle_file):
     with open(pickle_file, 'rb') as f:

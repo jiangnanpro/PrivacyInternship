@@ -10,6 +10,7 @@ from tqdm import tqdm
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from tflib.utils import *
 from tflib.nist import load_nist_images
+from tflib.qmnist import load_qmnist_attacker_evaluation_set
 
 ### Hyperparameters
 K = 5
@@ -25,11 +26,13 @@ def parse_arguments():
     parser.add_argument('--gan_model_dir', '-gdir', type=str, required=True,
                         help='directory for the Victim GAN model (save the generated.npz file)')
     parser.add_argument('--datapath', '-data', type=str,
-                        help='the directory for the NIST data')
+                        help='the directory for the data')
     parser.add_argument('--data_num', '-dnum', type=int, default=1000,
                         help='the number of query images to be considered')
+    parser.add_argument('--dataset', choices=['qmnist', 'mnist', 'nist', 'emnist'], 
+                        help='Dataset used to train the model')
     parser.add_argument('--same_census', '-sc', action='store_true', default=False,
-                        help='take test data from same census as training (high school) or different')
+                        help='take test data from same census as training (high school) or different. Only when dataset is NIST')    
     return parser.parse_args()
 
 
@@ -112,17 +115,20 @@ def main():
     gen_feature = 2. * gen_feature - 1.
 
     ### load query images
-    if args.same_census:
-        with open(os.path.join(args.datapath, 'HSF_4_images.npy'),'rb') as f:
-            pos_query_imgs = load_nist_images(np.load(f), args.data_num)
+    if args.dataset=='nist':
+        if args.same_census:
+            with open(os.path.join(args.datapath, 'HSF_4_images.npy'),'rb') as f:
+                pos_query_imgs = load_nist_images(np.load(f), args.data_num)
 
-        with open(os.path.join(args.datapath, 'HSF_4_images.npy'),'rb') as f:
-            neg_query_imgs = load_nist_images(np.load(f))[40000:40000+args.data_num]
-    else:
-        with open(os.path.join(args.datapath, 'HSF_4_images.npy'),'rb') as f:
-            pos_query_imgs = load_nist_images(np.load(f), args.data_num)
-        with open(os.path.join(args.datapath, 'HSF_6_images.npy'),'rb') as f:
-            neg_query_imgs = load_nist_images(np.load(f), args.data_num)
+            with open(os.path.join(args.datapath, 'HSF_4_images.npy'),'rb') as f:
+                neg_query_imgs = load_nist_images(np.load(f))[40000:40000+args.data_num]
+        else:
+            with open(os.path.join(args.datapath, 'HSF_4_images.npy'),'rb') as f:
+                pos_query_imgs = load_nist_images(np.load(f), args.data_num)
+            with open(os.path.join(args.datapath, 'HSF_6_images.npy'),'rb') as f:
+                neg_query_imgs = load_nist_images(np.load(f), args.data_num)
+    elif args.dataset=='qmnist':
+        pos_query_imgs, neg_query_imgs, _, _ = load_qmnist_attacker_evaluation_set(args.datapath)
 
 
     ### nearest neighbor search
