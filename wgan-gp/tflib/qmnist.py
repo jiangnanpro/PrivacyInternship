@@ -80,3 +80,10 @@ def load_qmnist_images_labels(pickle_file):
 
     return x_private, x_reserved, y_private[:,0], y_reserved[:,0]
 
+def load_qmnist_attack_images_labels(pickle_file):
+    with open(pickle_file, 'rb') as f:
+        pickle_data = pickle.load(f)
+        x_attack = pickle_data['x_attack']
+        y_attack = pickle_data['y_attack']
+    return x_attack, y_attack[:,0]
+

@@ -5,6 +5,7 @@ from tflib.ops.linear import Linear
 from tflib.ops.conv2d import Conv2D
 from tflib.ops.batchnorm import Batchnorm
 from tflib.ops.deconv2d import Deconv2D
+from tflib.ops.embedding import Embedding
 
 
 def LeakyReLU(x, alpha=0.2):
@@ -74,5 +75,65 @@ def Discriminator(inputs, INPUT_WIDTH=28, INPUT_HEIGHT=28, DIM=64, MODE='wgan-gp
 
     output = tf.reshape(output, [-1, 4*4*4*DIM])
     output = Linear('Discriminator.Output', 4*4*4*DIM, 1, output)
+
+    return tf.reshape(output, [-1])
+
+def ConditionalGenerator(n_samples, labels, embedding_dim=100, DIM=64, OUTPUT_DIM=28*28, MODE='wgan-gp', noise=None):
+    assert len(labels)==n_samples
+    if noise is None:
+        noise = tf.random.normal([n_samples, 128])
+    else:
+        assert len(labels)==len(noise)
+    label_embedding = Embedding('ConditionalGenerator.Embedding', 10, embedding_dim, labels)
+    
+    noise_labels = tf.concat([noise, label_embedding],1)
+
+    #embeddings = tf.keras.layers.Embedding(10, 10)
+    #embed = embeddings(words_ids)
+
+    output = Linear('ConditionalGenerator.Input', 128+embedding_dim, 4*4*4*DIM, noise_labels)
+    if MODE == 'wgan':
+        output = Batchnorm('ConditionalGenerator.BN1', [0], output)
+    output = tf.nn.relu(output)
+    output = tf.reshape(output, [-1, 4*DIM, 4, 4])
+
+    output = Deconv2D('ConditionalGenerator.2', 4*DIM, 2*DIM, 5, output)
+    if MODE == 'wgan':
+        output = Batchnorm('ConditionalGenerator.BN2', [0,2,3], output)
+    output = tf.nn.relu(output)
+
+    output = output[:,:,:7,:7]
+
+    output = Deconv2D('ConditionalGenerator.3', 2*DIM, DIM, 5, output)
+    if MODE == 'wgan':
+        output = Batchnorm('ConditionalGenerator.BN3', [0,2,3], output)
+
+    output = Deconv2D('ConditionalGenerator.5', DIM, 1, 5, output)
+    output = tf.nn.sigmoid(output)
+
+    return tf.reshape(output, [-1, OUTPUT_DIM])
+
+def ConditionalDiscriminator(inputs, labels, embedding_dim=10, INPUT_WIDTH=28, INPUT_HEIGHT=28, DIM=64, MODE='wgan-gp'):
+    assert len(labels)==len(inputs)
+    label_embedding = Embedding('ConditionalDiscriminator.Embedding', 100, embedding_dim, labels)
+    
+    input_labels = tf.concat([inputs, label_embedding],1)
+    output = tf.reshape(input_labels, [-1, 1, INPUT_WIDTH, INPUT_HEIGHT])
+
+    output = Conv2D('ConditionalDiscriminator.1',1,DIM,5,output,stride=2)
+    output = LeakyReLU(output)
+
+    output = Conv2D('ConditionalDiscriminator.2', DIM, 2*DIM, 5, output, stride=2)
+    if MODE == 'wgan':
+        output = Batchnorm('ConditionalDiscriminator.BN2', [0,2,3], output)
+    output = LeakyReLU(output)
+
+    output = Conv2D('ConditionalDiscriminator.3', 2*DIM, 4*DIM, 5, output, stride=2)
+    if MODE == 'wgan':
+        output = Batchnorm('ConditionalDiscriminator.BN3', [0,2,3], output)
+    output = LeakyReLU(output)
+
+    output = tf.reshape(output, [-1, 4*4*4*DIM])
+    output = Linear('ConditionalDiscriminator.Output', 4*4*4*DIM, 1, output)
 
     return tf.reshape(output, [-1])

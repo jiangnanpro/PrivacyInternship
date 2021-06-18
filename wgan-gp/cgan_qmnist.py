@@ -11,19 +11,21 @@ import tflib as lib
 import tflib.save_images
 import tflib.qmnist
 import tflib.plot
-from tflib.gan import Generator, Discriminator
+from tflib.gan import ConditionalGenerator, ConditionalDiscriminator
 
 lib.print_model_settings(locals().copy())
 
 def train():
     real_data = tf.compat.v1.placeholder(tf.float32, shape=[BATCH_SIZE, OUTPUT_DIM])
-    fake_data = Generator(BATCH_SIZE, DIM, OUTPUT_DIM, MODE)
+    labels = tf.compat.v1.placeholder(tf.int32, shape=[BATCH_SIZE])
 
-    disc_real = Discriminator(real_data, INPUT_WIDTH, INPUT_HEIGHT, DIM, MODE)
-    disc_fake = Discriminator(fake_data, INPUT_WIDTH, INPUT_HEIGHT, DIM, MODE)
+    fake_data = ConditionalGenerator(BATCH_SIZE, labels, EMBEDDING_DIM, DIM, OUTPUT_DIM, MODE)
 
-    gen_params = lib.params_with_name('Generator')
-    disc_params = lib.params_with_name('Discriminator')
+    disc_real = ConditionalDiscriminator(real_data, labels, EMBEDDING_DIM, INPUT_WIDTH, INPUT_HEIGHT, DIM, MODE)
+    disc_fake = ConditionalDiscriminator(fake_data, labels, EMBEDDING_DIM, INPUT_WIDTH, INPUT_HEIGHT, DIM, MODE)
+
+    gen_params = lib.params_with_name('ConditionalGenerator')
+    disc_params = lib.params_with_name('ConditionalDiscriminator')
 
 
     if MODE == 'wgan':
@@ -59,7 +61,7 @@ def train():
         )
         differences = fake_data - real_data
         interpolates = real_data + (alpha*differences)
-        gradients = tf.gradients(Discriminator(interpolates), [interpolates])[0]
+        gradients = tf.gradients(ConditionalDiscriminator(interpolates, labels), [interpolates])[0]
         slopes = tf.sqrt(tf.reduce_sum(tf.square(gradients), reduction_indices=[1]))
         gradient_penalty = tf.reduce_mean((slopes-1.)**2)
         disc_cost += LAMBDA*gradient_penalty
@@ -117,13 +119,15 @@ def train():
         clip_disc_weights = None
 
     # For saving samples
-    fixed_noise = tf.constant(np.random.normal(size=(128, 128)).astype('float32'))
-    fixed_noise_samples = Generator(128, noise=fixed_noise)
+    n_samples = 128
+    fixed_noise = tf.constant(np.random.normal(size=(n_samples, 128)).astype('float32'))
+    fixed_labels = tf.random.uniform((n_samples,), 0, 10, dtype=tf.dtypes.int32)
+    fixed_noise_samples = ConditionalGenerator(n_samples, fixed_labels, noise=fixed_noise)
     def generate_image(frame, true_dist):
         samples = session.run(fixed_noise_samples)
         lib.save_images.save_images(
-            samples.reshape((128, INPUT_WIDTH, INPUT_HEIGHT)), 
-            os.path.join(OUTPUT_IMAGES_PATH,'samples_{}_{}_qmnist.png'.format(frame, MODE))
+            samples.reshape((n_samples, INPUT_WIDTH, INPUT_HEIGHT)), 
+            os.path.join(OUTPUT_IMAGES_PATH,'samples_{}_Conditional{}_qmnist_.png'.format(frame, MODE))
         )
 
     # Dataset iterator
@@ -131,7 +135,7 @@ def train():
     def inf_train_gen():
         while True:
             for images,targets in train_gen():
-                yield images
+                yield images, targets
 
     # Train loop
     saver = tf.compat.v1.train.Saver()
@@ -152,10 +156,10 @@ def train():
             else:
                 disc_iters = CRITIC_ITERS
             for i in range(disc_iters):
-                _data = next(gen)
+                _data,_labels = next(gen)
                 _disc_cost, _ = session.run(
                     [disc_cost, disc_train_op],
-                    feed_dict={real_data: _data}
+                    feed_dict={real_data: _data, labels:_labels}
                 )
                 if clip_disc_weights is not None:
                     _ = session.run(clip_disc_weights)
@@ -166,12 +170,12 @@ def train():
             # Calculate dev loss, save weights and generate samples every 10000 iters
             if iteration % 10000 == 9999:
                 if MODEL_PATH:
-                    saver.save(session, os.path.join(MODEL_PATH,'{}_QMNIST'.format(MODE)))
+                    saver.save(session, os.path.join(MODEL_PATH,'Conditional{}_QMNIST'.format(MODE)))
                 dev_disc_costs = []
-                for images,_ in dev_gen():
+                for images,labels in dev_gen():
                     _dev_disc_cost = session.run(
                         disc_cost, 
-                        feed_dict={real_data: images}
+                        feed_dict={real_data: images, labels:labels}
                     )
                     dev_disc_costs.append(_dev_disc_cost)
                 lib.plot.plot('dev disc cost', np.mean(dev_disc_costs))                
@@ -185,7 +189,7 @@ def train():
             lib.plot.tick()
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Train WGAN with qmnist dataset')
+    parser = argparse.ArgumentParser(description='Train Conditional WGAN with qmnist dataset')
     parser.add_argument('--num_iters', type=int, default=100000, help='Number of training iterations')
     parser.add_argument('--batch_size', type=int, default=100, help='Size of the batch')
     parser.add_argument('--critic_iters', type=int, default=8, help='For WGAN and WGAN-GP, number of critic iters per gen iter')
@@ -201,6 +205,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
+    EMBEDDING_DIM = 10
     INPUT_HEIGHT = 28
     INPUT_WIDTH = 28
     OUTPUT_DIM = INPUT_HEIGHT*INPUT_WIDTH  # Number of pixels in QMNIST
