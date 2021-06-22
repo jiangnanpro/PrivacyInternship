@@ -8,7 +8,7 @@ import numpy as np
 import tensorflow as tf
 tf.compat.v1.random.set_random_seed(1234)
 
-from tflib.gan import Generator
+from tflib.gan import Generator, ConditionalGenerator
 from tflib.utils import load_model_from_checkpoint, save_image_grid
 
 
@@ -21,6 +21,7 @@ def parse_args():
                         help='path for saving the generated data (default: save to model dir)')
     parser.add_argument('--num_samples', type=int, default=20000,
                         help='num of samples')
+    parser.add_argument('--conditional', action='store_true', help='If passed, generate samples with conditional input')
     return parser.parse_args()
 
 
@@ -53,10 +54,15 @@ if __name__ == '__main__':
 
         ### define the varialbe for generating samples
         noise = tf.random.normal(shape=(BS, Z_DIM), dtype=tf.float32)
-        samples = Generator(BS, noise=noise)
+        if args.conditional:
+            fake_labels = tf.ones(shape=(BS), dtype=tf.int32)
+            samples = ConditionalGenerator(BS, fake_labels, embedding_dim=100, noise=noise)
+        else:
+            samples = Generator(BS, noise=noise)
 
         ### load the model
         vars = [v for v in tf.compat.v1.global_variables()]
+        print(vars)
         saver = tf.compat.v1.train.Saver(vars)
         sess.run(tf.compat.v1.variables_initializer(vars))
         if_load = load_model_from_checkpoint(model_dir, saver, sess)
@@ -66,7 +72,10 @@ if __name__ == '__main__':
         noise_sample = []
         img_sample = []
         for i in range(int(np.ceil(num_samples / BS))):
-            noise_batch, img_batch = sess.run([noise, samples])
+            if args.conditional:
+                noise_batch, img_batch = sess.run([noise, fake_labels, samples])
+            else:
+                noise_batch, img_batch = sess.run([noise, samples])
             noise_sample.append(noise_batch)
             img_sample.append(img_batch)
             

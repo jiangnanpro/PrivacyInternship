@@ -208,7 +208,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    EMBEDDING_DIM = 10
+    EMBEDDING_DIM = 100
     INPUT_HEIGHT = 28
     INPUT_WIDTH = 28
     OUTPUT_DIM = INPUT_HEIGHT*INPUT_WIDTH  # Number of pixels in QMNIST

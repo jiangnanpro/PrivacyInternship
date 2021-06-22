@@ -100,8 +100,7 @@ def Embedding(
         else:
 
             raise Exception('Invalid initialization!')
-
-        #embeddings = tf.Variable(tf.random.uniform([n_symbols, output_dim]))
+            
         emb = lib.param(
             name+'.g',
             weight_values)
