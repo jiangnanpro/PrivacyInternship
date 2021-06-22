@@ -120,10 +120,11 @@ def train():
 
     # For saving samples
     n_samples = 128
-    fixed_noise = tf.constant(np.random.normal(size=(n_samples, 128)).astype('float32'))
+    rng2 = np.random.RandomState(2022)
+    fixed_noise = tf.constant(rng2.normal(size=(n_samples, 128)).astype('float32'))
     fixed_labels = tf.random.uniform((n_samples,), 0, 10, dtype=tf.dtypes.int32)
     fixed_noise_samples = ConditionalGenerator(n_samples, fixed_labels, noise=fixed_noise)
-    def generate_image(frame, true_dist):
+    def generate_image(frame):
         samples = session.run(fixed_noise_samples)
         lib.save_images.save_images(
             samples.reshape((n_samples, INPUT_WIDTH, INPUT_HEIGHT)), 
@@ -135,6 +136,7 @@ def train():
     def inf_train_gen():
         while True:
             for images,targets in train_gen():
+                targets = targets.astype('int32')
                 yield images, targets
 
     # Train loop
@@ -149,7 +151,8 @@ def train():
             start_time = time.time()
 
             if iteration > 0:
-                _ = session.run(gen_train_op)
+                fake_labels = rng.randint(low=0, high=9, size=BATCH_SIZE)
+                _ = session.run(gen_train_op, feed_dict={labels:fake_labels})
 
             if MODE == 'dcgan':
                 disc_iters = 1
@@ -172,15 +175,15 @@ def train():
                 if MODEL_PATH:
                     saver.save(session, os.path.join(MODEL_PATH,'Conditional{}_QMNIST'.format(MODE)))
                 dev_disc_costs = []
-                for images,labels in dev_gen():
+                for dev_images,dev_labels in dev_gen():
                     _dev_disc_cost = session.run(
                         disc_cost, 
-                        feed_dict={real_data: images, labels:labels}
+                        feed_dict={real_data: dev_images, labels:dev_labels}
                     )
                     dev_disc_costs.append(_dev_disc_cost)
                 lib.plot.plot('dev disc cost', np.mean(dev_disc_costs))                
 
-                generate_image(iteration, _data)
+                generate_image(iteration)
 
             # Write logs every 100 iters
             if (iteration < 5) or (iteration % 100 == 99):
@@ -222,5 +225,7 @@ if __name__ == '__main__':
     NOISE_MULTIPLIER = args.noise_multiplier
     OUTPUT_IMAGES_PATH = args.path_generated_images
     MODEL_PATH = args.model_path
+
+    rng = np.random.RandomState(2021)
 
     train()

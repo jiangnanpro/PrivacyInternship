@@ -79,11 +79,11 @@ def Discriminator(inputs, INPUT_WIDTH=28, INPUT_HEIGHT=28, DIM=64, MODE='wgan-gp
     return tf.reshape(output, [-1])
 
 def ConditionalGenerator(n_samples, labels, embedding_dim=100, DIM=64, OUTPUT_DIM=28*28, MODE='wgan-gp', noise=None):
-    assert len(labels)==n_samples
+    assert labels.shape[0]==n_samples
     if noise is None:
         noise = tf.random.normal([n_samples, 128])
     else:
-        assert len(labels)==len(noise)
+        assert labels.shape[0]==noise.shape[0]
     label_embedding = Embedding('ConditionalGenerator.Embedding', 10, embedding_dim, labels)
     
     noise_labels = tf.concat([noise, label_embedding],1)
@@ -113,12 +113,16 @@ def ConditionalGenerator(n_samples, labels, embedding_dim=100, DIM=64, OUTPUT_DI
 
     return tf.reshape(output, [-1, OUTPUT_DIM])
 
-def ConditionalDiscriminator(inputs, labels, embedding_dim=10, INPUT_WIDTH=28, INPUT_HEIGHT=28, DIM=64, MODE='wgan-gp'):
-    assert len(labels)==len(inputs)
-    label_embedding = Embedding('ConditionalDiscriminator.Embedding', 100, embedding_dim, labels)
-    
-    input_labels = tf.concat([inputs, label_embedding],1)
-    output = tf.reshape(input_labels, [-1, 1, INPUT_WIDTH, INPUT_HEIGHT])
+def ConditionalDiscriminator(inputs, labels, embedding_dim=100, INPUT_WIDTH=28, INPUT_HEIGHT=28, DIM=64, MODE='wgan-gp'):
+    assert labels.shape[0]==inputs.shape[0]
+    labels_in = Embedding('ConditionalDiscriminator.Embedding', 10, embedding_dim, labels)
+    labels_in = Linear('ConditionalDiscriminator.Labels', embedding_dim, INPUT_WIDTH*INPUT_HEIGHT, labels_in)
+    labels_in = tf.reshape(labels_in, [-1, 1, INPUT_WIDTH, INPUT_HEIGHT])
+
+    images_in = tf.reshape(inputs, [-1, 1, INPUT_WIDTH, INPUT_HEIGHT])
+
+    output = tf.concat([images_in, labels_in], axis=1)
+
 
     output = Conv2D('ConditionalDiscriminator.1',1,DIM,5,output,stride=2)
     output = LeakyReLU(output)
