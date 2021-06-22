@@ -56,13 +56,12 @@ if __name__ == '__main__':
         noise = tf.random.normal(shape=(BS, Z_DIM), dtype=tf.float32)
         if args.conditional:
             fake_labels = tf.ones(shape=(BS), dtype=tf.int32)
-            samples = ConditionalGenerator(BS, fake_labels, embedding_dim=100, noise=noise)
+            samples = ConditionalGenerator(BS, fake_labels, embedding_dim=10, noise=noise)
         else:
             samples = Generator(BS, noise=noise)
 
         ### load the model
         vars = [v for v in tf.compat.v1.global_variables()]
-        print(vars)
         saver = tf.compat.v1.train.Saver(vars)
         sess.run(tf.compat.v1.variables_initializer(vars))
         if_load = load_model_from_checkpoint(model_dir, saver, sess)
@@ -73,7 +72,7 @@ if __name__ == '__main__':
         img_sample = []
         for i in range(int(np.ceil(num_samples / BS))):
             if args.conditional:
-                noise_batch, img_batch = sess.run([noise, fake_labels, samples])
+                noise_batch, img_batch = sess.run([noise, samples])
             else:
                 noise_batch, img_batch = sess.run([noise, samples])
             noise_sample.append(noise_batch)

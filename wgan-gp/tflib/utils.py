@@ -20,8 +20,6 @@ def load_model_from_checkpoint(checkpoint_dir, saver, sess):
     ckpt = tf.train.get_checkpoint_state(checkpoint_dir)
     if ckpt and ckpt.model_checkpoint_path:
         ckpt_name = os.path.basename(ckpt.model_checkpoint_path)
-        variables_in_checkpoint = tf.train.list_variables(os.path.join(checkpoint_dir, ckpt_name))
-        print("Variables found in checkpoint file",variables_in_checkpoint)
         saver.restore(sess, os.path.join(checkpoint_dir, ckpt_name))
         print(" [*] Success to read {}".format(ckpt_name))
         return True
