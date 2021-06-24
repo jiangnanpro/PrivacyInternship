@@ -151,7 +151,7 @@ def train():
             start_time = time.time()
 
             if iteration > 0:
-                fake_labels = rng.randint(low=0, high=9, size=BATCH_SIZE)
+                fake_labels = rng.randint(low=0, high=10, size=BATCH_SIZE)
                 _ = session.run(gen_train_op, feed_dict={labels:fake_labels})
 
             if MODE == 'dcgan':

@@ -22,6 +22,8 @@ def parse_args():
     parser.add_argument('--num_samples', type=int, default=20000,
                         help='num of samples')
     parser.add_argument('--conditional', action='store_true', help='If passed, generate samples with conditional input')
+    parser.add_argument('--digit', type=int, default=1,
+                        help='Digit to generate. Only used when --conditional is set to True.')
     return parser.parse_args()
 
 
@@ -55,8 +57,8 @@ if __name__ == '__main__':
         ### define the varialbe for generating samples
         noise = tf.random.normal(shape=(BS, Z_DIM), dtype=tf.float32)
         if args.conditional:
-            fake_labels = tf.ones(shape=(BS), dtype=tf.int32)
-            samples = ConditionalGenerator(BS, fake_labels, embedding_dim=10, noise=noise)
+            fake_labels = tf.ones(shape=(BS), dtype=tf.int32)*args.digit
+            samples = ConditionalGenerator(BS, fake_labels, embedding_dim=100, noise=noise)
         else:
             samples = Generator(BS, noise=noise)
 
@@ -71,20 +73,19 @@ if __name__ == '__main__':
         noise_sample = []
         img_sample = []
         for i in range(int(np.ceil(num_samples / BS))):
-            if args.conditional:
-                noise_batch, img_batch = sess.run([noise, samples])
-            else:
-                noise_batch, img_batch = sess.run([noise, samples])
+            noise_batch, img_batch = sess.run([noise, samples])
             noise_sample.append(noise_batch)
             img_sample.append(img_batch)
             
     noise_sample = np.concatenate(noise_sample)[:num_samples]
     img_sample = np.concatenate(img_sample)[:num_samples]
     img_sample = np.reshape(img_sample, [-1, 1, INPUT_WIDTH, INPUT_HEIGHT])
-    save_image_grid(img_sample[:100], os.path.join(save_dir, 'samples.png'), [-1, 1], [10, 10])
+    if args.conditional:
+        images_png_name = 'samples_{}.png'.format(args.digit)
+    else:
+        images_png_name = 'samples.png'
+    save_image_grid(img_sample[:100], os.path.join(save_dir, images_png_name), [-1, 1], [10, 10])
 
     img_r01 = (img_sample + 1.) / 2.
     #img_r01 = img_r01.transpose(0, 2, 3, 1)  # NCHW => NHWC
-    np.savez_compressed(os.path.join(save_dir, 'generated.npz'),
-                        noise=noise_sample,
-                        img_r01=img_r01)
+    np.savez_compressed(os.path.join(save_dir, 'generated.npz'), noise=noise_sample, img_r01=img_r01)
