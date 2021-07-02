@@ -2,6 +2,8 @@ import pickle
 
 import numpy as np
 
+from utils import load_pretrained_model, grey2RGB, resize
+
 def qmnist_generator(data, batch_size, n_labelled, limit=None):
     images, targets = data
 
@@ -56,6 +58,38 @@ def load(datapath, batch_size, test_batch_size, n_labelled=None, dev_num = 10000
         qmnist_generator((dev_images/255, dev_labels), test_batch_size, n_labelled), 
         qmnist_generator((test_images/255, test_labels), test_batch_size, n_labelled)
     )
+
+def load_tabular(datapath, batch_size, test_batch_size, preprocessing='resnetV2',n_labelled=None, dev_num = 10000, test_num=30000):    
+    train_images, reserved_images, train_labels, reserved_labels = load_qmnist_images_labels(datapath)
+    resize_height = 32
+    resize_width = 32
+    train_images = transform_qmnist(train_images/255, resize_width, resize_height)
+        
+    dev_images = transform_qmnist(reserved_images[0:dev_num]/255, resize_width, resize_height)
+    dev_labels = reserved_labels[0:dev_num]
+    
+    test_images = transform_qmnist(reserved_images[dev_num:dev_num+test_num]/255, resize_width, resize_height)
+    test_labels = reserved_labels[dev_num:dev_num+test_num]
+
+    model = load_pretrained_model(preprocessing)
+
+    train_images_tabular = model.predict(train_images)
+    dev_images_tabular = model.predict(dev_images)
+    test_images_tabular = model.predict(test_images)
+    
+    return (
+        qmnist_generator((train_images_tabular, train_labels), batch_size, n_labelled),
+        qmnist_generator((dev_images_tabular, dev_labels), test_batch_size, n_labelled), 
+        qmnist_generator((test_images_tabular, test_labels), test_batch_size, n_labelled)
+    )
+
+def transform_qmnist(images, resized_width=32, resized_height=32):
+    transform_images = []
+    for image in images:
+        image = grey2RGB(resize(image, resized_width, resized_height))
+        transform_images.append(image)
+    return np.array(transform_images)
+
 
 def load_qmnist_attacker_evaluation_set(pickle_file, pos_size=1000, neg_size=10000):
     x_private, x_reserved, y_private, y_reserved = load_qmnist_images_labels(pickle_file)

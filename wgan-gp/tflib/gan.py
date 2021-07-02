@@ -141,3 +141,49 @@ def ConditionalDiscriminator(inputs, labels, embedding_dim=100, INPUT_WIDTH=28, 
     output = Linear('ConditionalDiscriminator.Output', 4*4*4*DIM, 1, output)
 
     return tf.reshape(output, [-1])
+
+def ConditionalGeneratorLinear(n_samples, labels, n_features=1000, embedding_dim=100, noise=None):
+    assert labels.shape[0]==n_samples
+    if noise is None:
+        noise = tf.random.normal([n_samples, 128])
+    else:
+        assert labels.shape[0]==noise.shape[0]
+    label_embedding = Embedding('ConditionalLinearGenerator.Embedding', 11, embedding_dim, labels)
+    
+    noise_labels = tf.concat([noise, label_embedding],1)
+
+    #embeddings = tf.keras.layers.Embedding(10, 10)
+    #embed = embeddings(words_ids)
+
+    output = Linear('ConditionalLinearGenerator.Input', 128+embedding_dim, n_features*2, noise_labels)
+    output = tf.nn.relu(output)
+    output = Linear('ConditionalLinearGenerator.2', n_features*2, round(1.5*n_features), output)
+    output = tf.nn.relu(output)
+
+    output = Linear('ConditionalLinearGenerator.Output', round(1.5*n_features), n_features, output)
+    output = tf.nn.sigmoid(output)
+
+    return output
+
+def ConditionalDiscriminatorLinear(inputs, labels, embedding_dim=100, INPUT_WIDTH=28, INPUT_HEIGHT=28, DIM=64):
+    assert labels.shape[0]==inputs.shape[0]
+    labels_in = Embedding('ConditionalLinearDiscriminator.Embedding', 11, embedding_dim, labels)
+    # TO DO: remove INPUT_WIDTH and INPUT_HEIGHT
+    labels_in = Linear('ConditionalLinearDiscriminator.Labels', embedding_dim, INPUT_WIDTH*INPUT_HEIGHT, labels_in)
+    labels_in = tf.reshape(labels_in, [-1, 1, INPUT_WIDTH, INPUT_HEIGHT])
+
+    images_in = tf.reshape(inputs, [-1, 1, INPUT_WIDTH, INPUT_HEIGHT])
+
+    output = tf.concat([images_in, labels_in], axis=1)
+
+
+    output = Linear('ConditionalLinearDiscriminator.1', 1, DIM, output)
+    output = tf.nn.leaky_relu(output)
+    output = Linear('ConditionalLinearDiscriminator.2', DIM, DIM*2, output)
+    output = tf.nn.leaky_relu(output)
+    output = Linear('ConditionalLinearDiscriminator.3', DIM*2, DIM*4, output)
+    output = tf.nn.leaky_relu(output)
+    output = Linear('ConditionalLinearDiscriminator.Output', DIM*4, 1, output)
+
+
+    return output
