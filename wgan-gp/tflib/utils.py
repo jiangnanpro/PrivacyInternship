@@ -6,7 +6,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import tensorflow as tf
-from tensorflow.keras.applications import resnet_v2
+from tensorflow.keras.applications import resnet_v2, vgg19
 import cv2
 
 NCOLS = 5
@@ -201,9 +201,11 @@ def visualize_samples(img_r01, save_dir):
     plt.tight_layout()
     plt.savefig(os.path.join(save_dir, 'samples.png'))
 
-def load_pretrained_model(model_name='resnetV2', input_shape=None):
+def load_pretrained_model(model_name='vgg19', input_shape=None):
     if model_name=='resnetV2':
-        model=resnet_v2.ResNet50V2(include_top=False, input_shape=input_shape)
+        model = resnet_v2.ResNet50V2(include_top=False, input_shape=input_shape)
+    elif model_name.lower()=='vgg19':
+        model = vgg19.VGG19(include_top=False, input_shape=input_shape)
     return model
 
 def grey2RGB(gray):

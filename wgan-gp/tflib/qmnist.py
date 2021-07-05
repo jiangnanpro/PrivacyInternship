@@ -59,7 +59,7 @@ def load(datapath, batch_size, test_batch_size, n_labelled=None, dev_num = 10000
         qmnist_generator((test_images/255, test_labels), test_batch_size, n_labelled)
     )
 
-def load_tabular(datapath, batch_size, test_batch_size, preprocessing='resnetV2',n_labelled=None, dev_num = 10000, test_num=30000):    
+def load_tabular(datapath, batch_size, test_batch_size, preprocessing='vgg19',n_labelled=None, dev_num = 10000, test_num=30000):    
     train_images, reserved_images, train_labels, reserved_labels = load_qmnist_images_labels(datapath)
     resize_height = 32
     resize_width = 32
