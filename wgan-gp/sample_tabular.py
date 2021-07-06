@@ -8,8 +8,8 @@ import numpy as np
 import tensorflow as tf
 tf.compat.v1.random.set_random_seed(1234)
 
-from tflib.gan import Generator, ConditionalGenerator
-from tflib.utils import load_model_from_checkpoint, save_image_grid
+from tflib.gan import ConditionalLinearGenerator
+from tflib.utils import load_model_from_checkpoint
 
 
 ####################################################################################################################
@@ -21,7 +21,6 @@ def parse_args():
                         help='path for saving the generated data (default: save to model dir)')
     parser.add_argument('--num_samples', type=int, default=20000,
                         help='num of samples')
-    parser.add_argument('--conditional', action='store_true', help='If passed, generate samples with conditional input')
     parser.add_argument('--digit', type=int, default=1,
                         help='Digit to generate. Only used when --conditional is set to True. If digit=-1, generate all digits and store in .npz')
     return parser.parse_args()
@@ -43,10 +42,8 @@ if __name__ == '__main__':
         OUTPUT_SIZE = config['OUTPUT_SIZE']
         GAN_TYPE = config['Architecture']
         Z_DIM = config['Z_DIM']
-    else:        
-        INPUT_WIDTH = 28
-        INPUT_HEIGHT = 28
-        OUTPUT_SIZE = INPUT_WIDTH*INPUT_HEIGHT
+    else:
+        OUTPUT_SIZE = 512
         Z_DIM = 128
 
     ### set up session
@@ -56,22 +53,19 @@ if __name__ == '__main__':
 
         ### define the varialbe for generating samples
         noise = tf.random.normal(shape=(BS, Z_DIM), dtype=tf.float32)
-        if args.conditional:
-            if args.digit>=0 and args.digit<=9:
-                fake_labels = tf.ones(shape=(BS), dtype=tf.int32)*args.digit
-                samples = ConditionalGenerator(BS, fake_labels, embedding_dim=100, noise=noise)
-            elif args.digit==-1:
-                num = int(BS/10)
-                labels_list=[]
-                for digit in range(10):
-                    aux_labels = np.ones(shape=(num), dtype=np.int32)*digit
-                    labels_list.append(aux_labels)
-                fake_labels = tf.convert_to_tensor(np.concatenate(labels_list),dtype=tf.int32)
-                samples = ConditionalGenerator(BS, fake_labels, embedding_dim=100, noise=noise)
-            else:
-                raise('Error. Please, introduce a digit from 0 to 9 or -1.')
+        if args.digit>=0 and args.digit<=9:
+            fake_labels = tf.ones(shape=(BS), dtype=tf.int32)*args.digit
+            samples = ConditionalLinearGenerator(BS, fake_labels, OUTPUT_SIZE, embedding_dim=100, noise=noise)
+        elif args.digit==-1:
+            num = int(BS/10)
+            labels_list=[]
+            for digit in range(10):
+                aux_labels = np.ones(shape=(num), dtype=np.int32)*digit
+                labels_list.append(aux_labels)
+            fake_labels = tf.convert_to_tensor(np.concatenate(labels_list),dtype=tf.int32)
+            samples = ConditionalLinearGenerator(BS, fake_labels, OUTPUT_SIZE, embedding_dim=100, noise=noise)
         else:
-            samples = Generator(BS, noise=noise)
+            raise('Error. Please, introduce a digit from 0 to 9 or -1.')
 
         ### load the model
         vars = [v for v in tf.compat.v1.global_variables()]
@@ -85,11 +79,8 @@ if __name__ == '__main__':
         img_sample = []
         label_sample = []
         for i in range(int(np.ceil(num_samples / BS))):
-            if args.conditional:
-                noise_batch, img_batch, label_batch = sess.run([noise, samples, fake_labels])
-                label_sample.append(label_batch)
-            else:
-                noise_batch, img_batch = sess.run([noise, samples])
+            noise_batch, img_batch, label_batch = sess.run([noise, samples, fake_labels])
+            label_sample.append(label_batch)
             noise_sample.append(noise_batch)
             img_sample.append(img_batch)
             
@@ -97,18 +88,9 @@ if __name__ == '__main__':
     noise_sample = np.concatenate(noise_sample)[:num_samples]
     img_sample = np.concatenate(img_sample)[:num_samples]
     label_sample = np.concatenate(label_sample)[:num_samples]
-    img_sample = np.reshape(img_sample, [-1, 1, INPUT_WIDTH, INPUT_HEIGHT])
-    if args.conditional:
-        images_png_name = 'samples_{}.png'.format(args.digit)
-    else:
-        images_png_name = 'samples.png'
-    save_image_grid(img_sample[:100], os.path.join(save_dir, images_png_name), [-1, 1], [10, 10])
-
-    img_r01 = (img_sample + 1.) / 2.
+    
     #img_r01 = img_r01.transpose(0, 2, 3, 1)  # NCHW => NHWC
-    if args.conditional and args.digit==-1:
-        np.savez_compressed(os.path.join(save_dir, 'generated_images_labels.npz'), labels=label_sample, images=img_r01)
-    elif args.conditional:
-        np.savez_compressed(os.path.join(save_dir, 'generated_images_labels{}.npz'.format(args.digit)), labels=label_sample, images=img_r01)
+    if args.digit==-1:
+        np.savez_compressed(os.path.join(save_dir, 'generated_images_labels.npz'), labels=label_sample, images=img_sample)
     else:
-        np.savez_compressed(os.path.join(save_dir, 'generated.npz'), noise=noise_sample, images=img_r01)
+        np.savez_compressed(os.path.join(save_dir, 'generated.npz'), noise=noise_sample, labels=label_sample, images=img_sample)

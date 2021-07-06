@@ -114,7 +114,7 @@ def main():
 
     ### load generated samples
     generate = np.load(os.path.join(load_dir, 'generated.npz'))
-    gen_imgs = generate['img_r01']
+    gen_imgs = generate['images']
     gen_z = generate['noise']
     gen_feature = np.reshape(gen_imgs, [len(gen_imgs), -1])
     gen_feature = 2. * gen_feature - 1.

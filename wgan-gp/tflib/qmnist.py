@@ -4,7 +4,7 @@ import numpy as np
 
 from tflib.utils import load_pretrained_model, grey2RGB, resize
 
-def qmnist_generator(data, batch_size, n_labelled, limit=None):
+def qmnist_generator(data, batch_size, n_labelled, limit=None, tabular=False):
     images, targets = data
 
     rng_state = np.random.get_state()
@@ -28,8 +28,10 @@ def qmnist_generator(data, batch_size, n_labelled, limit=None):
         if n_labelled is not None:
             np.random.set_state(rng_state)
             np.random.shuffle(labelled)
-                
-        image_batches = images.reshape(-1, batch_size, int(images.shape[1]*images.shape[2]))
+        if tabular:
+            image_batches = images.reshape(-1, batch_size, int(images.shape[1]))
+        else:
+            image_batches = images.reshape(-1, batch_size, int(images.shape[1]*images.shape[2]))
         target_batches = targets.reshape(-1, batch_size)
 
         if n_labelled is not None:
@@ -72,15 +74,17 @@ def load_tabular(datapath, batch_size, test_batch_size, preprocessing='vgg19',n_
     test_labels = reserved_labels[dev_num:dev_num+test_num]
 
     model = load_pretrained_model(preprocessing)
+    n_features = model.output_shape[-1]
 
-    train_images_tabular = model.predict(train_images)
-    dev_images_tabular = model.predict(dev_images)
-    test_images_tabular = model.predict(test_images)
+    train_images_tabular = model.predict(train_images).reshape(train_images.shape[0], n_features)
+    dev_images_tabular = model.predict(dev_images).reshape(dev_images.shape[0], n_features)
+    test_images_tabular = model.predict(test_images).reshape(test_images.shape[0], n_features)
+
     
     return (
-        qmnist_generator((train_images_tabular, train_labels), batch_size, n_labelled),
-        qmnist_generator((dev_images_tabular, dev_labels), test_batch_size, n_labelled), 
-        qmnist_generator((test_images_tabular, test_labels), test_batch_size, n_labelled)
+        qmnist_generator((train_images_tabular, train_labels), batch_size, n_labelled, tabular=True),
+        qmnist_generator((dev_images_tabular, dev_labels), test_batch_size, n_labelled, tabular=True), 
+        qmnist_generator((test_images_tabular, test_labels), test_batch_size, n_labelled, tabular=True)
     )
 
 def transform_qmnist(images, resized_width=32, resized_height=32):
