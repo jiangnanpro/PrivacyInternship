@@ -2,7 +2,7 @@ import pickle
 
 import numpy as np
 
-from utils import load_pretrained_model, grey2RGB, resize
+from tflib.utils import load_pretrained_model, grey2RGB, resize
 
 def qmnist_generator(data, batch_size, n_labelled, limit=None):
     images, targets = data

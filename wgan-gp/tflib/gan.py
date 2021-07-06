@@ -157,13 +157,13 @@ def ConditionalLinearGenerator(n_samples, labels, n_features, embedding_dim=100,
     output = Linear('ConditionalLinearGenerator.2', n_features*2, round(1.5*n_features), output)
     output = tf.nn.relu(output)
     output = Linear('ConditionalLinearGenerator.Output', round(1.5*n_features), n_features, output)
-    output = tf.nn.sigmoid(output)
+    output = tf.nn.relu(output)
 
     return output
 
 def ConditionalLinearDiscriminator(inputs, labels, embedding_dim=100, DIM=64):
     assert labels.shape[0]==inputs.shape[0]
-    n_features = inputs.shape[1]
+    n_features = int(inputs.shape[1])
     labels_in = Embedding('ConditionalLinearDiscriminator.Embedding', 11, embedding_dim, labels)
     # TO DO: remove INPUT_WIDTH and INPUT_HEIGHT
 
