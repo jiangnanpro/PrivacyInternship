@@ -94,7 +94,8 @@ if __name__ == '__main__':
             
     noise_sample = np.concatenate(noise_sample)[:num_samples]
     img_sample = np.concatenate(img_sample)[:num_samples]
-    label_sample = np.concatenate(label_sample)[:num_samples]
+    if args.conditional:
+        label_sample = np.concatenate(label_sample)[:num_samples]
     
     if args.conditional and args.digit==-1:
         np.savez_compressed(os.path.join(save_dir, 'generated_images_labels.npz'), labels=label_sample, images=img_sample)

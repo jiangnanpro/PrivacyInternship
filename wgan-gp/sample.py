@@ -96,7 +96,8 @@ if __name__ == '__main__':
             
     noise_sample = np.concatenate(noise_sample)[:num_samples]
     img_sample = np.concatenate(img_sample)[:num_samples]
-    label_sample = np.concatenate(label_sample)[:num_samples]
+    if args.conditional:
+        label_sample = np.concatenate(label_sample)[:num_samples]
     img_sample = np.reshape(img_sample, [-1, 1, INPUT_WIDTH, INPUT_HEIGHT])
     if args.conditional:
         images_png_name = 'samples_{}.png'.format(args.digit)

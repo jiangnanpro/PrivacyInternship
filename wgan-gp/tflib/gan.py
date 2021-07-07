@@ -143,16 +143,16 @@ def ConditionalDiscriminator(inputs, labels, embedding_dim=100, INPUT_WIDTH=28, 
     return tf.reshape(output, [-1])
 
 def LinearGenerator(n_samples, n_features, noise=None):
+    z_dim = 128
     if noise is None:
-        noise = tf.random.normal([n_samples, 128])
+        noise = tf.random.normal([n_samples, z_dim])
 
-    output = Linear('LinearGenerator.Input', 128, n_features*2, noise)
+    output = Linear('LinearGenerator.Input', z_dim, z_dim*2, noise)
     output = tf.nn.relu(output)
-    output = Linear('LinearGenerator.2', n_features*2, round(1.5*n_features), output)
+    output = Linear('LinearGenerator.2', z_dim*2, z_dim*4, output)
     output = tf.nn.relu(output)
-    output = Linear('LinearGenerator.Output', round(1.5*n_features), n_features, output)
+    output = Linear('LinearGenerator.Output', z_dim*4, n_features, output)
     output = tf.nn.relu(output)
-
     return output
 
 def LinearDiscriminator(inputs, DIM=64):
@@ -160,11 +160,11 @@ def LinearDiscriminator(inputs, DIM=64):
 
     output = Linear('LinearDiscriminator.1', n_features, DIM, inputs)
     output = tf.nn.leaky_relu(output)
-    output = Linear('LinearDiscriminator.2', DIM, DIM*2, output)
+    output = Linear('LinearDiscriminator.2', DIM, int(DIM/2), output)
     output = tf.nn.leaky_relu(output)
-    output = Linear('LinearDiscriminator.3', DIM*2, DIM*4, output)
+    output = Linear('LinearDiscriminator.3', int(DIM/2), int(DIM/4), output)
     output = tf.nn.leaky_relu(output)
-    output = Linear('LinearDiscriminator.Output', DIM*4, 1, output)
+    output = Linear('LinearDiscriminator.Output', int(DIM/4), 1, output)
 
     return output
 
