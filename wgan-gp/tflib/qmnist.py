@@ -1,6 +1,7 @@
 import pickle
 
 import numpy as np
+from sklearn.decomposition import PCA
 
 from tflib.utils import load_pretrained_model, grey2RGB, resize
 
@@ -61,7 +62,7 @@ def load(datapath, batch_size, test_batch_size, n_labelled=None, dev_num = 10000
         qmnist_generator((test_images/255, test_labels), test_batch_size, n_labelled)
     )
 
-def load_tabular(datapath, batch_size, test_batch_size, preprocessing='vgg19',n_labelled=None, dev_num = 10000, test_num=30000):    
+def load_tabular(datapath, batch_size, test_batch_size, preprocessing='vgg19', pca_ncomp=None, n_labelled=None, dev_num = 10000, test_num=30000):    
     train_images, reserved_images, train_labels, reserved_labels = load_qmnist_images_labels(datapath)
     resize_height = 32
     resize_width = 32
@@ -80,12 +81,22 @@ def load_tabular(datapath, batch_size, test_batch_size, preprocessing='vgg19',n_
     dev_images_tabular = model.predict(dev_images).reshape(dev_images.shape[0], n_features)
     test_images_tabular = model.predict(test_images).reshape(test_images.shape[0], n_features)
 
-    
-    return (
-        qmnist_generator((train_images_tabular, train_labels), batch_size, n_labelled, tabular=True),
-        qmnist_generator((dev_images_tabular, dev_labels), test_batch_size, n_labelled, tabular=True), 
-        qmnist_generator((test_images_tabular, test_labels), test_batch_size, n_labelled, tabular=True)
-    )
+    if pca_ncomp is not None:
+        pca = PCA(n_components=pca_ncomp)
+        train_images_tabular = pca.fit_transform(train_images_tabular)
+        dev_images_tabular = pca.transform(dev_images_tabular)
+        test_images_tabular = pca.transform(test_images_tabular)
+        return (pca,
+            qmnist_generator((train_images_tabular, train_labels), batch_size, n_labelled, tabular=True),
+            qmnist_generator((dev_images_tabular, dev_labels), test_batch_size, n_labelled, tabular=True), 
+            qmnist_generator((test_images_tabular, test_labels), test_batch_size, n_labelled, tabular=True)
+        )
+    else:    
+        return(
+            qmnist_generator((train_images_tabular, train_labels), batch_size, n_labelled, tabular=True),
+            qmnist_generator((dev_images_tabular, dev_labels), test_batch_size, n_labelled, tabular=True), 
+            qmnist_generator((test_images_tabular, test_labels), test_batch_size, n_labelled, tabular=True)
+        )
 
 def transform_qmnist(images, resized_width=32, resized_height=32):
     transform_images = []

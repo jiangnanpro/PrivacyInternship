@@ -152,7 +152,6 @@ def LinearGenerator(n_samples, n_features, noise=None):
     output = Linear('LinearGenerator.2', z_dim*2, z_dim*4, output)
     output = tf.nn.relu(output)
     output = Linear('LinearGenerator.Output', z_dim*4, n_features, output)
-    output = tf.nn.relu(output)
     return output
 
 def LinearDiscriminator(inputs, DIM=64):

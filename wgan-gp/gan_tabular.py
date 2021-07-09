@@ -2,6 +2,7 @@ import os, sys
 sys.path.append(os.getcwd())
 import time
 import argparse
+import pickle
 
 import numpy as np
 import tensorflow as tf
@@ -15,10 +16,13 @@ from tflib.gan import LinearGenerator, LinearDiscriminator
 lib.print_model_settings(locals().copy())
 
 def train():
-    if PREPROCESSING_MODEL == 'vgg19':
+    if PCA_NCOMPS is not None:
+        OUTPUT_DIM = PCA_NCOMPS
+    elif PREPROCESSING_MODEL == 'vgg19':
         OUTPUT_DIM = 512
     elif PREPROCESSING_MODEL == 'resnetV2':
         OUTPUT_DIM = 2048
+    
     real_data = tf.compat.v1.placeholder(tf.float32, shape=[BATCH_SIZE, OUTPUT_DIM])
 
     fake_data = LinearGenerator(BATCH_SIZE, OUTPUT_DIM)
@@ -95,7 +99,10 @@ def train():
 
 
     # Dataset iterator
-    train_gen, dev_gen, test_gen = lib.qmnist.load_tabular(DATAPATH, BATCH_SIZE, BATCH_SIZE, PREPROCESSING_MODEL)
+    pca, train_gen, dev_gen, test_gen = lib.qmnist.load_tabular(DATAPATH, BATCH_SIZE, BATCH_SIZE, PREPROCESSING_MODEL, PCA_NCOMPS)
+    # Save trained PCA
+    with open(os.path.join(MODEL_PATH,'PCA.pkl'),'wb') as f:
+        pickle.dump(pca,f)
     def inf_train_gen():
         while True:
             for images,targets in train_gen():
@@ -153,6 +160,7 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', type=int, default=100, help='Size of the batch')
     parser.add_argument('--critic_iters', type=int, default=8, help='For WGAN and WGAN-GP, number of critic iters per gen iter')
     parser.add_argument('--dim', type=int, default=64, help='Model dimensionality')
+    parser.add_argument('--pca_ncomps', type=int, default=30, help='Dimension size after applying PCA to the feature space')
     parser.add_argument('--lambda_val', type=int, default=10, help='Gradient penalty lambda hyperparameter')
     parser.add_argument('--mode', choices=['wgan-gp', 'wgan', 'dcgan'], help='Architecture and type of the generative model', default='wgan-gp')
     parser.add_argument('--datapath', help='Path for .pickle with QMNIST data.', required=True)
@@ -166,6 +174,7 @@ if __name__ == '__main__':
 
     EMBEDDING_DIM = 100
 
+    PCA_NCOMPS = args.pca_ncomps
     DATAPATH = args.datapath
     BATCH_SIZE = args.batch_size
     MODE = args.mode

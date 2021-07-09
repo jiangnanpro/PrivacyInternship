@@ -37,6 +37,8 @@ if __name__ == '__main__':
     out_dir = args.samples_path
     save_dir = model_dir if out_dir is None else out_dir
     config_path = os.path.join(model_dir, 'params.pkl')
+    pca_path = os.path.join(model_dir, 'PCA.pkl')
+    
     BS = 100
     if os.path.exists(config_path):
         config = pickle.load(open(os.path.join(model_dir, 'params.pkl'), 'r'))
@@ -46,6 +48,10 @@ if __name__ == '__main__':
     else:
         OUTPUT_SIZE = 512
         Z_DIM = 128
+    if os.path.exists(pca_path):
+        with open(pca_path,'rb') as f:
+            pca = pickle.load(f)
+        OUTPUT_SIZE = pca.n_components
 
     ### set up session
     config = tf.compat.v1.ConfigProto()
