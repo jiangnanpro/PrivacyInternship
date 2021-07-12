@@ -144,7 +144,7 @@ def ConditionalDiscriminator(inputs, labels, embedding_dim=100, INPUT_WIDTH=28, 
 
 def ResidualLayer(name, n_in, n_out, inputs):
     output = Linear(name+'.Linear', n_in, n_out, inputs)
-    output = Batchnorm(name+'.BN', [0,1], inputs)
+    output = Batchnorm(name+'.BN', [0,1], output)
     output = tf.nn.relu(output)
     return tf.concat([output,inputs], axis=1)
 
@@ -156,7 +156,7 @@ def TabularGenerator(n_samples, n_features, DIM=(256,256), noise=None):
     input_dim = z_dim
     output = noise
     for i,elem in enumerate(DIM):
-        output = ResidualLayer('TabularResidualLayer{}'.format(i+1),input_dim, elem, output)
+        output = ResidualLayer('TabularResidualLayer{}'.format(i+1), input_dim, elem, output)
         input_dim+=elem
     output = Linear('TabularGenerator.Output', input_dim, n_features, output)
     output = tf.nn.relu(output)
@@ -165,6 +165,7 @@ def TabularGenerator(n_samples, n_features, DIM=(256,256), noise=None):
 def TabularDiscriminator(inputs, DIM=(256,256)):
     n_features = int(inputs.shape[1])
     input_dim = n_features
+    output = inputs
     for i,elem in enumerate(DIM):
         output = Linear('TabularLinearDiscriminator.{}'.format(i+1),input_dim, elem, output)        
         output = tf.nn.leaky_relu(output)

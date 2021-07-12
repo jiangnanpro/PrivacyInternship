@@ -67,7 +67,7 @@ def train():
         )
         differences = fake_data - real_data
         interpolates = real_data + (alpha*differences)
-        gradients = tf.gradients(LinearDiscriminator(interpolates), [interpolates])[0]
+        gradients = tf.gradients(TabularDiscriminator(interpolates), [interpolates])[0]
         slopes = tf.sqrt(tf.reduce_sum(tf.square(gradients), reduction_indices=[1]))
         gradient_penalty = tf.reduce_mean((slopes-1.)**2)
         disc_cost += LAMBDA*gradient_penalty
@@ -84,13 +84,13 @@ def train():
                 )
         else:
             gen_train_op = tf.compat.v1.train.AdamOptimizer(
-                learning_rate=1e-4, 
+                learning_rate=2e-4, 
                 beta1=0.5,
                 beta2=0.9
             )
         gen_train_op = gen_train_op.minimize(gen_cost, var_list=gen_params)
         disc_train_op = tf.compat.v1.train.AdamOptimizer(
-            learning_rate=1e-4, 
+            learning_rate=2e-4, 
             beta1=0.5, 
             beta2=0.9
         ).minimize(disc_cost, var_list=disc_params)
@@ -162,7 +162,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Train WGAN with QMNIST tabular dataset')
     parser.add_argument('--num_iters', type=int, default=100000, help='Number of training iterations')
     parser.add_argument('--batch_size', type=int, default=100, help='Size of the batch')
-    parser.add_argument('--critic_iters', type=int, default=8, help='For WGAN and WGAN-GP, number of critic iters per gen iter')
+    parser.add_argument('--critic_iters', type=int, default=5, help='For WGAN and WGAN-GP, number of critic iters per gen iter')
     parser.add_argument('--dim', type=tuple, default=(256,256), help='Tuple or list of ints to set the dimension of the generator and discriminator')
     parser.add_argument('--pca_ncomps', type=int, default=None, help='Dimension size after applying PCA to the feature space. If None, do not apply PCA.')
     parser.add_argument('--lambda_val', type=int, default=10, help='Gradient penalty lambda hyperparameter')
@@ -175,8 +175,6 @@ if __name__ == '__main__':
     parser.add_argument('--model_path', help='Path for saving model weights', default='')
 
     args = parser.parse_args()
-
-    EMBEDDING_DIM = 100
 
     PCA_NCOMPS = args.pca_ncomps
     DATAPATH = args.datapath
