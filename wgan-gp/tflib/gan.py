@@ -142,29 +142,35 @@ def ConditionalDiscriminator(inputs, labels, embedding_dim=100, INPUT_WIDTH=28, 
 
     return tf.reshape(output, [-1])
 
-def LinearGenerator(n_samples, n_features, noise=None):
+def ResidualLayer(name, n_in, n_out, inputs):
+    output = Linear(name+'.Linear', n_in, n_out, inputs)
+    output = Batchnorm(name+'.BN', [0,1], inputs)
+    output = tf.nn.relu(output)
+    return tf.concat([output,inputs], axis=1)
+
+
+def TabularGenerator(n_samples, n_features, DIM=(256,256), noise=None):
     z_dim = 128
     if noise is None:
         noise = tf.random.normal([n_samples, z_dim])
-
-    output = Linear('LinearGenerator.Input', z_dim, z_dim*2, noise)
+    input_dim = z_dim
+    output = noise
+    for i,elem in enumerate(DIM):
+        output = ResidualLayer('TabularResidualLayer{}'.format(i+1),input_dim, elem, output)
+        input_dim+=elem
+    output = Linear('TabularGenerator.Output', input_dim, n_features, output)
     output = tf.nn.relu(output)
-    output = Linear('LinearGenerator.2', z_dim*2, z_dim*4, output)
-    output = tf.nn.relu(output)
-    output = Linear('LinearGenerator.Output', z_dim*4, n_features, output)
     return output
 
-def LinearDiscriminator(inputs, DIM=64):
+def TabularDiscriminator(inputs, DIM=(256,256)):
     n_features = int(inputs.shape[1])
-
-    output = Linear('LinearDiscriminator.1', n_features, DIM, inputs)
-    output = tf.nn.leaky_relu(output)
-    output = Linear('LinearDiscriminator.2', DIM, int(DIM/2), output)
-    output = tf.nn.leaky_relu(output)
-    output = Linear('LinearDiscriminator.3', int(DIM/2), int(DIM/4), output)
-    output = tf.nn.leaky_relu(output)
-    output = Linear('LinearDiscriminator.Output', int(DIM/4), 1, output)
-
+    input_dim = n_features
+    for i,elem in enumerate(DIM):
+        output = Linear('TabularLinearDiscriminator.{}'.format(i+1),input_dim, elem, output)        
+        output = tf.nn.leaky_relu(output)
+        output = tf.nn.dropout(output, rate=0.4)
+        input_dim = elem
+    output = Linear('TabularDiscriminator.Output', input_dim, 1, output)
     return output
 
 def ConditionalLinearGenerator(n_samples, labels, n_features, embedding_dim=100, noise=None):

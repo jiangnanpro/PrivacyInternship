@@ -8,7 +8,7 @@ import numpy as np
 import tensorflow as tf
 tf.compat.v1.random.set_random_seed(1234)
 
-from tflib.gan import ConditionalLinearGenerator, LinearGenerator
+from tflib.gan import ConditionalLinearGenerator, TabularGenerator
 from tflib.utils import load_model_from_checkpoint
 
 
@@ -75,7 +75,7 @@ if __name__ == '__main__':
             else:
                 raise('Error. Please, introduce a digit from 0 to 9 or -1.')
         else:
-            samples = LinearGenerator(BS, OUTPUT_SIZE, noise=noise)
+            samples = TabularGenerator(BS, OUTPUT_SIZE, noise=noise)
 
         ### load the model
         vars = [v for v in tf.compat.v1.global_variables()]

@@ -11,7 +11,7 @@ tf.compat.v1.random.set_random_seed(1234)
 import tflib as lib
 import tflib.qmnist
 import tflib.plot
-from tflib.gan import LinearGenerator, LinearDiscriminator
+from tflib.gan import TabularGenerator, TabularDiscriminator
 
 lib.print_model_settings(locals().copy())
 
@@ -25,13 +25,13 @@ def train():
     
     real_data = tf.compat.v1.placeholder(tf.float32, shape=[BATCH_SIZE, OUTPUT_DIM])
 
-    fake_data = LinearGenerator(BATCH_SIZE, OUTPUT_DIM)
+    fake_data = TabularGenerator(BATCH_SIZE, OUTPUT_DIM)
 
-    disc_real = LinearDiscriminator(real_data, DIM)
-    disc_fake = LinearDiscriminator(fake_data, DIM)
+    disc_real = TabularDiscriminator(real_data, DIM)
+    disc_fake = TabularDiscriminator(fake_data, DIM)
 
-    gen_params = lib.params_with_name('LinearGenerator')
-    disc_params = lib.params_with_name('LinearDiscriminator')
+    gen_params = lib.params_with_name('TabularGenerator')
+    disc_params = lib.params_with_name('TabularDiscriminator')
 
 
     if MODE == 'wgan':
@@ -99,10 +99,14 @@ def train():
 
 
     # Dataset iterator
-    pca, train_gen, dev_gen, test_gen = lib.qmnist.load_tabular(DATAPATH, BATCH_SIZE, BATCH_SIZE, PREPROCESSING_MODEL, PCA_NCOMPS)
-    # Save trained PCA
-    with open(os.path.join(MODEL_PATH,'PCA.pkl'),'wb') as f:
-        pickle.dump(pca,f)
+    if PCA_NCOMPS is not None:
+        pca, train_gen, dev_gen, test_gen = lib.qmnist.load_tabular(DATAPATH, BATCH_SIZE, BATCH_SIZE, PREPROCESSING_MODEL, PCA_NCOMPS)
+        # Save trained PCA
+        with open(os.path.join(MODEL_PATH,'PCA.pkl'),'wb') as f:
+            pickle.dump(pca,f)
+    else:
+        train_gen, dev_gen, test_gen = lib.qmnist.load_tabular(DATAPATH, BATCH_SIZE, BATCH_SIZE, PREPROCESSING_MODEL)
+    
     def inf_train_gen():
         while True:
             for images,targets in train_gen():
@@ -155,12 +159,12 @@ def train():
             lib.plot.tick()
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Train Conditional WGAN with qmnist dataset')
+    parser = argparse.ArgumentParser(description='Train WGAN with QMNIST tabular dataset')
     parser.add_argument('--num_iters', type=int, default=100000, help='Number of training iterations')
     parser.add_argument('--batch_size', type=int, default=100, help='Size of the batch')
     parser.add_argument('--critic_iters', type=int, default=8, help='For WGAN and WGAN-GP, number of critic iters per gen iter')
-    parser.add_argument('--dim', type=int, default=64, help='Model dimensionality')
-    parser.add_argument('--pca_ncomps', type=int, default=30, help='Dimension size after applying PCA to the feature space')
+    parser.add_argument('--dim', type=tuple, default=(256,256), help='Tuple or list of ints to set the dimension of the generator and discriminator')
+    parser.add_argument('--pca_ncomps', type=int, default=None, help='Dimension size after applying PCA to the feature space. If None, do not apply PCA.')
     parser.add_argument('--lambda_val', type=int, default=10, help='Gradient penalty lambda hyperparameter')
     parser.add_argument('--mode', choices=['wgan-gp', 'wgan', 'dcgan'], help='Architecture and type of the generative model', default='wgan-gp')
     parser.add_argument('--datapath', help='Path for .pickle with QMNIST data.', required=True)
