@@ -48,13 +48,13 @@ def qmnist_generator(data, batch_size, n_labelled, limit=None, tabular=False):
     return get_epoch
 
 def load(datapath, batch_size, test_batch_size, n_labelled=None, dev_num = 10000, test_num=30000):    
-    train_images, reserved_images, train_labels, reserved_labels = load_qmnist_images_labels(datapath)
+    train_images, evaluator_images, train_labels, evaluator_labels = load_qmnist_images_labels(datapath)
         
-    dev_images = reserved_images[0:dev_num]
-    dev_labels = reserved_labels[0:dev_num]
+    dev_images = evaluator_images[0:dev_num]
+    dev_labels = evaluator_labels[0:dev_num]
     
-    test_images = reserved_images[dev_num:dev_num+test_num]
-    test_labels = reserved_labels[dev_num:dev_num+test_num]
+    test_images = evaluator_images[dev_num:dev_num+test_num]
+    test_labels = evaluator_labels[dev_num:dev_num+test_num]
     
     return (
         qmnist_generator((train_images/255, train_labels), batch_size, n_labelled),
@@ -63,16 +63,16 @@ def load(datapath, batch_size, test_batch_size, n_labelled=None, dev_num = 10000
     )
 
 def load_tabular(datapath, batch_size, test_batch_size, preprocessing='vgg19', pca_ncomp=None, n_labelled=None, dev_num = 10000, test_num=30000):    
-    train_images, reserved_images, train_labels, reserved_labels = load_qmnist_images_labels(datapath)
+    train_images, evaluator_images, train_labels, evaluator_labels = load_qmnist_images_labels(datapath)
     resize_height = 32
     resize_width = 32
     train_images = transform_qmnist(train_images/255, resize_width, resize_height)
         
-    dev_images = transform_qmnist(reserved_images[0:dev_num]/255, resize_width, resize_height)
-    dev_labels = reserved_labels[0:dev_num]
+    dev_images = transform_qmnist(evaluator_images[0:dev_num]/255, resize_width, resize_height)
+    dev_labels = evaluator_labels[0:dev_num]
     
-    test_images = transform_qmnist(reserved_images[dev_num:dev_num+test_num]/255, resize_width, resize_height)
-    test_labels = reserved_labels[dev_num:dev_num+test_num]
+    test_images = transform_qmnist(evaluator_images[dev_num:dev_num+test_num]/255, resize_width, resize_height)
+    test_labels = evaluator_labels[dev_num:dev_num+test_num]
 
     model = load_pretrained_model(preprocessing)
     n_features = model.output_shape[-1]
@@ -107,32 +107,32 @@ def transform_qmnist(images, resized_width=32, resized_height=32):
 
 
 def load_qmnist_attacker_evaluation_set(pickle_file, pos_size=1000, neg_size=10000):
-    x_private, x_reserved, y_private, y_reserved = load_qmnist_images_labels(pickle_file)
+    x_defender, x_evaluator, y_defender, y_evaluator = load_qmnist_images_labels(pickle_file)
 
     rng = np.random.RandomState(2021)
-    pos_index_seq = rng.choice(range(len(x_private)), size=pos_size, replace=False)
-    neg_index_seq = rng.choice(range(len(x_reserved)), size=neg_size, replace=False)
+    pos_index_seq = rng.choice(range(len(x_defender)), size=pos_size, replace=False)
+    neg_index_seq = rng.choice(range(len(x_evaluator)), size=neg_size, replace=False)
 
-    pos_images = x_private[pos_index_seq]
-    pos_labels = y_private[pos_index_seq]
-    neg_images = x_reserved[neg_index_seq]
-    neg_labels = y_reserved[neg_index_seq]
+    pos_images = x_defender[pos_index_seq]
+    pos_labels = y_defender[pos_index_seq]
+    neg_images = x_evaluator[neg_index_seq]
+    neg_labels = y_evaluator[neg_index_seq]
     return pos_images, neg_images, pos_labels, neg_labels
     
 def load_qmnist_images_labels(pickle_file):
     with open(pickle_file, 'rb') as f:
         pickle_data = pickle.load(f)
-        x_private = pickle_data['x_private']
-        x_reserved = pickle_data['x_reserved']
-        y_private = pickle_data['y_private']
-        y_reserved = pickle_data['y_reserved']
+        x_defender = pickle_data['x_defender']
+        x_evaluator = pickle_data['x_evaluator']
+        y_defender = pickle_data['y_defender']
+        y_evaluator = pickle_data['y_evaluator']
 
-    return x_private, x_reserved, y_private[:,0], y_reserved[:,0]
+    return x_defender, x_evaluator, y_defender[:,0], y_evaluator[:,0]
 
-def load_qmnist_attack_images_labels(pickle_file):
+def load_qmnist_attacker_images_labels(pickle_file):
     with open(pickle_file, 'rb') as f:
         pickle_data = pickle.load(f)
-        x_attack = pickle_data['x_attack']
-        y_attack = pickle_data['y_attack']
-    return x_attack, y_attack[:,0]
+        x_attacker = pickle_data['x_attacker']
+        y_attacker = pickle_data['y_attacker']
+    return x_attacker, y_attacker[:,0]
 
