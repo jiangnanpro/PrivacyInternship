@@ -136,3 +136,12 @@ def load_qmnist_attacker_images_labels(pickle_file):
         y_attacker = pickle_data['y_attacker']
     return x_attacker, y_attacker[:,0]
 
+def load_qmnist_images_labels2(pickle_file):
+    with open(pickle_file, 'rb') as f:
+        pickle_data = pickle.load(f)
+        x_defender = pickle_data['x_defender']
+        x_evaluator = pickle_data['x_reserved']
+        y_defender = pickle_data['y_defender']
+        y_evaluator = pickle_data['y_reserved']
+
+    return x_defender, x_evaluator, y_defender[:,0], y_evaluator[:,0]
