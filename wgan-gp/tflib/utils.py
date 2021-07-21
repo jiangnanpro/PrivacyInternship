@@ -213,3 +213,10 @@ def grey2RGB(gray):
 
 def resize(image, width, height, interpolation=4):
     return cv2.resize(image, (width,height), interpolation=interpolation)
+
+def transform_images(images, resized_width=32, resized_height=32):
+    transform_images = []
+    for image in images:
+        image = grey2RGB(resize(image, resized_width, resized_height))
+        transform_images.append(image)
+    return np.array(transform_images)
