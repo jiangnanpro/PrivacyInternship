@@ -6,7 +6,7 @@ import glob
 #os.environ['CUDA_VISIBLE_DEVICES'] = '2'
 import numpy as np
 import fid
-from scipy.misc import imread
+from imageio import imread
 import tensorflow as tf
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from PIL import Image
@@ -52,7 +52,9 @@ if __name__ == "__main__":
         images=[]
         for path in args.images_npy_path:
             with open(path,'rb') as f:
-                images.append(load_nist_images(np.load(f)))
+                images_loaded = np.load(f)['img_r01']
+                print(images_loaded[0])
+                images.append(load_nist_images(images_loaded))
         images = np.vstack(images)
 
     print(images.shape)

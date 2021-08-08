@@ -211,12 +211,38 @@ def load_pretrained_model(model_name='vgg19', input_shape=None):
 def grey2RGB(gray):
     return cv2.cvtColor(gray.astype('float32'), cv2.COLOR_GRAY2BGR)
 
-def resize(image, width, height, interpolation=4):
+def resize_image(image, width, height, interpolation=4):
     return cv2.resize(image, (width,height), interpolation=interpolation)
 
 def transform_images(images, resized_width=32, resized_height=32):
     transform_images = []
     for image in images:
-        image = grey2RGB(resize(image, resized_width, resized_height))
+        image = grey2RGB(resize_image(image, resized_width, resized_height))
         transform_images.append(image)
     return np.array(transform_images)
+
+# Smooth the image to add non-binarity
+def debinarize_image(image, kernel_size=(5,5), sigmaX=3, sigmaY=3):
+    blur_image = cv2.GaussianBlur(image, kernel_size, sigmaX=sigmaX, sigmaY=sigmaY, borderType = cv2.BORDER_DEFAULT)
+    return blur_image/np.max(blur_image)
+
+def crop_with_bounding_box(black_white_image, crop_margins=0):
+    cv2.threshold(black_white_image,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU,black_white_image)
+    contours, _ = cv2.findContours(black_white_image, cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_NONE)
+    size = 0
+    for c in contours:
+        x, y, w, h = cv2.boundingRect(c)
+        # take largest bounding box
+        if h*w > size:
+            size = h*w
+            out_x = x
+            out_y = y
+            out_h = h
+            out_w = w
+    # Correct aspect-ratio for 1 digits
+    epsilon = 0
+    if (w/h) < 0.6:
+        epsilon = (int(h/w)+(int((w/h)*15)))
+    left_y = max(out_y-crop_margins,0)
+    up_x = max(out_x-epsilon-crop_margins,0)
+    return black_white_image[left_y:out_y+out_h+crop_margins, up_x:out_x+out_w+epsilon+crop_margins]

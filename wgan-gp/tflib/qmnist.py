@@ -3,7 +3,7 @@ import pickle
 import numpy as np
 from sklearn.decomposition import PCA
 
-from tflib.utils import load_pretrained_model, grey2RGB, resize
+from tflib.utils import load_pretrained_model, grey2RGB, resize_image
 
 def qmnist_generator(data, batch_size, n_labelled, limit=None, tabular=False):
     images, targets = data
@@ -101,7 +101,7 @@ def load_tabular(datapath, batch_size, test_batch_size, preprocessing='vgg19', p
 def transform_qmnist(images, resized_width=32, resized_height=32):
     transform_images = []
     for image in images:
-        image = grey2RGB(resize(image, resized_width, resized_height))
+        image = grey2RGB(resize_image(image, resized_width, resized_height))
         transform_images.append(image)
     return np.array(transform_images)
 

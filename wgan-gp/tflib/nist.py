@@ -1,7 +1,8 @@
 import os
-import cv2 as cv
 
 import numpy as np
+
+from tflib.utils import debinarize_image, resize_image, crop_with_bounding_box
 
 def nist_generator(data, batch_size, n_labelled, limit=None):
     images, targets = data
@@ -75,37 +76,12 @@ def load_nist_images(images, num_images=None, resize=True, resize_width=28, resi
     for img in range(num_images):
         unpack_image = np.unpackbits(images[img,:]).reshape((128,128)).astype('int16')*255
         unpack_image = np.abs(unpack_image-255).astype('uint8') # change: background to black and digit to white 
-        cropped_image = crop_with_bounding_box(unpack_image)
+        cropped_image = crop_with_bounding_box(unpack_image,5)
         if np.unique(cropped_image).shape[0]>1:
             final_image = np.clip(debinarize_image(cropped_image),0,1)
+            final_image = (final_image*255).astype('uint8')
             if resize:
-                final_image = cv.resize(final_image, (resize_width,resize_height), interpolation=4)
+                final_image = resize_image(final_image, resize_width, resize_height, interpolation=4)
             preprocessed_images.append(final_image.astype('uint8'))
     return np.array(preprocessed_images)
     
-# Smooth the image to add non-binarity
-def debinarize_image(image, kernel_size=(5,5), sigmaX=3, sigmaY=3):
-    blur_image = cv.GaussianBlur(image, kernel_size, sigmaX=sigmaX, sigmaY=sigmaY, borderType = cv.BORDER_DEFAULT)
-    return blur_image/np.max(blur_image)
-    
-def crop_with_fixed_values(img, left = 30, top = 30, right = 95, bottom = 95):
-    return img[top:bottom, left:right]
-
-def crop_with_bounding_box(black_white_image):
-    cv.threshold(black_white_image,0,255,cv.THRESH_BINARY+cv.THRESH_OTSU,black_white_image)
-    contours, _ = cv.findContours(black_white_image, cv.RETR_EXTERNAL,cv.CHAIN_APPROX_NONE)
-    size = 0
-    for c in contours:
-        x, y, w, h = cv.boundingRect(c)
-        # take largest bounding box 
-        if h*w > size:
-            size = h*w
-            out_x = x
-            out_y = y
-            out_h = h
-            out_w = w
-    # Correct aspect-ratio for 1 digits
-    epsilon = 0
-    if (w/h) < 0.5:
-        epsilon = (int(h/w)+(int((w/h)*15)))
-    return black_white_image[out_y:out_y+out_h, out_x-epsilon:out_x+out_w+epsilon]
