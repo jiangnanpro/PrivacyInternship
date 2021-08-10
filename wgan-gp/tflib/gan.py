@@ -1,3 +1,7 @@
+import time
+import os
+
+import numpy as np
 import tensorflow as tf
 tf.compat.v1.random.set_random_seed(1234)
 
@@ -6,6 +10,9 @@ from tflib.ops.conv2d import Conv2D
 from tflib.ops.batchnorm import Batchnorm
 from tflib.ops.deconv2d import Deconv2D
 from tflib.ops.embedding import Embedding
+from tflib.plot import plot, flush, tick
+from tflib.save_images import save_images
+import tflib as lib
 
 
 def LeakyReLU(x, alpha=0.2):
@@ -210,3 +217,206 @@ def ConditionalLinearDiscriminator(inputs, labels, embedding_dim=100, DIM=64):
     output = Linear('ConditionalLinearDiscriminator.Output', DIM*4, 1, output)
 
     return output
+
+def train(IMAGES, LABELS, INPUT_WIDTH, INPUT_HEIGHT, MODEL_PATH, BATCH_SIZE=50, DIM=64, MODE='wgan-gp', LAMBDA=10, CRITIC_ITERS=5, ITERS=100000,
+          TRAIN_WITH_DP=False, L2_NORM_CLIP=None, NOISE_MULTIPLIER=None, OUTPUT_IMAGES_PATH=None):
+
+    OUTPUT_DIM = INPUT_WIDTH*INPUT_HEIGHT
+    if OUTPUT_IMAGES_PATH is None:
+        OUTPUT_IMAGES_PATH = MODEL_PATH
+
+    real_data = tf.compat.v1.placeholder(tf.float32, shape=[BATCH_SIZE, OUTPUT_DIM])
+    fake_data = Generator(BATCH_SIZE, DIM, OUTPUT_DIM, MODE)
+
+    disc_real = Discriminator(real_data, INPUT_WIDTH, INPUT_HEIGHT, DIM, MODE)
+    disc_fake = Discriminator(fake_data, INPUT_WIDTH, INPUT_HEIGHT, DIM, MODE)
+    
+    gen_params = lib.params_with_name('Generator')
+    disc_params = lib.params_with_name('Discriminator')
+
+
+    if MODE == 'wgan':
+        gen_cost = -tf.reduce_mean(disc_fake)
+        disc_cost = tf.reduce_mean(disc_fake) - tf.reduce_mean(disc_real)
+
+        gen_train_op = tf.compat.v1.train.RMSPropOptimizer(
+            learning_rate=5e-5
+        ).minimize(gen_cost, var_list=gen_params)
+        disc_train_op = tf.compat.v1.train.RMSPropOptimizer(
+            learning_rate=5e-5
+        ).minimize(disc_cost, var_list=disc_params)
+
+        clip_ops = []
+        for var in lib.params_with_name('Discriminator'):
+            clip_bounds = [-.01, .01]
+            clip_ops.append(
+                tf.assign(
+                    var, 
+                    tf.clip_by_value(var, clip_bounds[0], clip_bounds[1])
+                )
+            )
+        clip_disc_weights = tf.group(*clip_ops)
+
+    elif MODE == 'wgan-gp':
+        gen_cost = -tf.reduce_mean(disc_fake)
+        disc_cost = tf.reduce_mean(disc_fake) - tf.reduce_mean(disc_real)
+
+        alpha = tf.random.uniform(
+            shape=[BATCH_SIZE,1], 
+            minval=0.,
+            maxval=1.
+        )
+        differences = fake_data - real_data
+        interpolates = real_data + (alpha*differences)
+        gradients = tf.gradients(Discriminator(interpolates), [interpolates])[0]
+        slopes = tf.sqrt(tf.reduce_sum(tf.square(gradients), reduction_indices=[1]))
+        gradient_penalty = tf.reduce_mean((slopes-1.)**2)
+        disc_cost += LAMBDA*gradient_penalty
+
+        if TRAIN_WITH_DP:
+            from tensorflow_privacy.privacy.optimizers.dp_optimizer import DPAdamGaussianOptimizer
+            gen_train_op = DPAdamGaussianOptimizer(
+                l2_norm_clip=L2_NORM_CLIP,
+                noise_multiplier=NOISE_MULTIPLIER,
+                num_microbatches=1, # Possible problem after reducing the size of cost vector in tensorflow-privacy. Check: https://github.com/tensorflow/privacy/issues/17
+                learning_rate=1e-4,
+                beta1=0.5,
+                beta2=0.9
+                )
+        else:
+            gen_train_op = tf.compat.v1.train.AdamOptimizer(
+                learning_rate=1e-4, 
+                beta1=0.5,
+                beta2=0.9
+            )
+        gen_train_op = gen_train_op.minimize(gen_cost, var_list=gen_params)
+        disc_train_op = tf.compat.v1.train.AdamOptimizer(
+            learning_rate=1e-4, 
+            beta1=0.5, 
+            beta2=0.9
+        ).minimize(disc_cost, var_list=disc_params)
+
+        clip_disc_weights = None
+
+    elif MODE == 'dcgan':
+        gen_cost = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+            logits=disc_fake, 
+            labels=tf.ones_like(disc_fake)
+        ))
+
+        disc_cost =  tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+            logits=disc_fake, 
+            labels=tf.zeros_like(disc_fake)
+        ))
+        disc_cost += tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+            logits=disc_real, 
+            labels=tf.ones_like(disc_real)
+        ))
+        disc_cost /= 2.
+
+        gen_train_op = tf.compat.v1.train.AdamOptimizer(
+            learning_rate=2e-4, 
+            beta1=0.5
+        ).minimize(gen_cost, var_list=gen_params)
+        disc_train_op = tf.compat.v1.train.AdamOptimizer(
+            learning_rate=2e-4, 
+            beta1=0.5
+        ).minimize(disc_cost, var_list=disc_params)
+
+        clip_disc_weights = None
+
+    # For saving samples
+    fixed_noise = tf.constant(np.random.normal(size=(128, 128)).astype('float32'))
+    fixed_noise_samples = Generator(128, noise=fixed_noise)
+    def generate_image(frame, true_dist):
+        samples = session.run(fixed_noise_samples)
+        save_images(
+            samples.reshape((128, INPUT_WIDTH, INPUT_HEIGHT)), 
+            os.path.join(OUTPUT_IMAGES_PATH,'samples_{}_{}.png'.format(frame, MODE))
+        )
+
+    # Dataset iterator
+    DEV_SIZE = int(IMAGES.shape[0]*0.1)
+    TRAIN_SIZE = IMAGES.shape[0]-DEV_SIZE
+    train_images = IMAGES[:TRAIN_SIZE]
+    train_labels = LABELS[:TRAIN_SIZE]
+    dev_images = IMAGES[TRAIN_SIZE:]
+    dev_labels = LABELS[TRAIN_SIZE:]
+    
+    train_gen = data_generator((train_images, train_labels),BATCH_SIZE)
+    dev_gen = data_generator((dev_images, dev_labels),BATCH_SIZE)
+    def inf_train_gen():
+        while True:
+            for images,targets in train_gen():
+                yield images
+
+    # Train loop
+    saver = tf.compat.v1.train.Saver()
+    with tf.compat.v1.Session() as session:
+
+        session.run(tf.compat.v1.global_variables_initializer())
+
+        gen = inf_train_gen()
+
+        for iteration in range(ITERS):
+            start_time = time.time()
+
+            if iteration > 0:
+                _ = session.run(gen_train_op)
+
+            if MODE == 'dcgan':
+                disc_iters = 1
+            else:
+                disc_iters = CRITIC_ITERS
+            for _ in range(disc_iters):
+                _data = next(gen)
+                _disc_cost, _ = session.run(
+                    [disc_cost, disc_train_op],
+                    feed_dict={real_data: _data}
+                )
+                if clip_disc_weights is not None:
+                    _ = session.run(clip_disc_weights)
+
+            plot('train disc cost', _disc_cost)
+            plot('time', time.time() - start_time)
+
+            # Calculate dev loss, save weights and generate samples every 10000 iters
+            if iteration % 10000 == 9999:
+                if MODEL_PATH:
+                    saver.save(session, os.path.join(MODEL_PATH,'{}'.format(MODE)))
+                dev_disc_costs = []
+                for images,_ in dev_gen():
+                    _dev_disc_cost = session.run(
+                        disc_cost, 
+                        feed_dict={real_data: images}
+                    )
+                    dev_disc_costs.append(_dev_disc_cost)
+                plot('dev disc cost', np.mean(dev_disc_costs))                
+
+                generate_image(iteration, _data)
+
+            # Write logs every 100 iters
+            if (iteration < 5) or (iteration % 100 == 99):
+                flush()
+
+            tick()
+
+def data_generator(data, batch_size):
+    images, targets = data
+
+    rng_state = np.random.get_state()
+    np.random.shuffle(images)
+    np.random.set_state(rng_state)
+    np.random.shuffle(targets)
+    def get_epoch():
+        rng_state = np.random.get_state()
+        np.random.shuffle(images)
+        np.random.set_state(rng_state)
+        np.random.shuffle(targets)
+
+        image_batches = images.reshape(-1, batch_size, int(images.shape[1]*images.shape[2]))
+        target_batches = targets.reshape(-1, batch_size)
+        for i in range(len(image_batches)):
+            yield (np.copy(image_batches[i]), np.copy(target_batches[i]))
+
+    return get_epoch

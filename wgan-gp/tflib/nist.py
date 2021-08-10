@@ -33,8 +33,6 @@ def nist_generator(data, batch_size, n_labelled, limit=None):
         target_batches = targets.reshape(-1, batch_size)
 
         if n_labelled is not None:
-            labelled_batches = labelled.reshape(-1, batch_size)
-
             for i in range(len(image_batches)):
                 yield (np.copy(image_batches[i]), np.copy(target_batches[i]), np.copy(labelled))
 
@@ -67,13 +65,13 @@ def load(datapath, batch_size, test_batch_size, n_labelled=None, hsf=4):
         labels = np.load(f)
     
     train_images = images[:train_num]
-    train_labels = images[:train_num]
+    train_labels = labels[:train_num]
     
     dev_images = images[train_num:train_num+test_num]
-    dev_labels = images[train_num:train_num+test_num]
+    dev_labels = labels[train_num:train_num+test_num]
     
     test_images = images[train_num+test_num:train_num+2*test_num]
-    test_labels = images[train_num+test_num:train_num+2*test_num]
+    test_labels = labels[train_num+test_num:train_num+2*test_num]
     
     return (
         nist_generator((train_images, train_labels), batch_size, n_labelled),

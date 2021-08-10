@@ -134,8 +134,10 @@ def train():
                 yield images
 
     # Train loop
-    saver = tf.train.Saver()
-    with tf.Session() as session:
+    saver = tf.compat.v1.train.Saver()
+    with tf.compat.v1.Session() as session:
+
+        session.run(tf.compat.v1.global_variables_initializer())
 
         session.run(tf.initialize_all_variables())
 
