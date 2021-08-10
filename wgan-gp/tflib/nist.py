@@ -44,6 +44,18 @@ def nist_generator(data, batch_size, n_labelled, limit=None):
 
     return get_epoch
 
+def load_whole_nist(datapath, hsf_list=[0,1,2,3,4,6,7]):
+    images_stack = []
+    labels_stack = []
+    for hsf in hsf_list:
+        with open(os.path.join(datapath, 'HSF_'+str(hsf)+'_images.npy'),'rb') as f:
+            images = load_nist_images(np.load(f))
+        with open(os.path.join(datapath,'HSF_'+str(hsf)+'_labels.npy'),'rb') as f:
+            labels = np.load(f).reshape([-1,1])
+        images_stack.append(np.array(images))
+        labels_stack.append(np.array(labels))
+    return np.vstack(images_stack), np.vstack(labels_stack)
+
 def load(datapath, batch_size, test_batch_size, n_labelled=None, hsf=4):
     
     train_num = 30000
@@ -76,7 +88,7 @@ def load_nist_images(images, num_images=None, resize=True, resize_width=28, resi
     for img in range(num_images):
         unpack_image = np.unpackbits(images[img,:]).reshape((128,128)).astype('int16')*255
         unpack_image = np.abs(unpack_image-255).astype('uint8') # change: background to black and digit to white 
-        cropped_image = crop_with_bounding_box(unpack_image,5)
+        cropped_image = crop_with_bounding_box(unpack_image,0)
         if np.unique(cropped_image).shape[0]>1:
             final_image = np.clip(debinarize_image(cropped_image),0,1)
             final_image = (final_image*255).astype('uint8')
