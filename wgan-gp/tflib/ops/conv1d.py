@@ -16,7 +16,7 @@ def Conv1D(name, input_dim, output_dim, filter_size, inputs, he_init=True, mask_
 
     returns: tensor of shape (batch size, num channels, width)
     """
-    with tf.name_scope(name) as scope:
+    with tf.compat.v1.name_scope(name) as scope:
 
         if mask_type is not None:
             mask_type, mask_n_channels = mask_type
@@ -78,15 +78,15 @@ def Conv1D(name, input_dim, output_dim, filter_size, inputs, he_init=True, mask_
                 name + '.g',
                 norm_values
             )
-            with tf.name_scope('weightnorm') as scope:
-                norms = tf.sqrt(tf.reduce_sum(tf.square(filters), reduction_indices=[0,1]))
+            with tf.compat.v1.name_scope('weightnorm') as scope:
+                norms = tf.compat.v1.sqrt(tf.compat.v1.reduce_sum(tf.compat.v1.square(filters), reduction_indices=[0,1]))
                 filters = filters * (target_norms / norms)
 
         if mask_type is not None:
-            with tf.name_scope('filter_mask'):
+            with tf.compat.v1.name_scope('filter_mask'):
                 filters = filters * mask
 
-        result = tf.nn.conv1d(
+        result = tf.compat.v1.nn.conv1d(
             value=inputs, 
             filters=filters, 
             stride=stride,
@@ -102,8 +102,8 @@ def Conv1D(name, input_dim, output_dim, filter_size, inputs, he_init=True, mask_
 
             # result = result + _biases
 
-            result = tf.expand_dims(result, 3)
-            result = tf.nn.bias_add(result, _biases, data_format='NCHW')
-            result = tf.squeeze(result)
+            result = tf.compat.v1.expand_dims(result, 3)
+            result = tf.compat.v1.nn.bias_add(result, _biases, data_format='NCHW')
+            result = tf.compat.v1.squeeze(result)
 
         return result

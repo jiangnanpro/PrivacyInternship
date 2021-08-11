@@ -139,8 +139,6 @@ def train():
 
         session.run(tf.compat.v1.global_variables_initializer())
 
-        session.run(tf.initialize_all_variables())
-
         gen = inf_train_gen()
 
         for iteration in range(ITERS):
@@ -153,7 +151,7 @@ def train():
                 disc_iters = 1
             else:
                 disc_iters = CRITIC_ITERS
-            for i in range(disc_iters):
+            for _ in range(disc_iters):
                 _data = next(gen)
                 _disc_cost, _ = session.run(
                     [disc_cost, disc_train_op],

@@ -40,7 +40,7 @@ def Embedding(
         indices: input symbols tensor
     """
     
-    with tf.name_scope(name) as scope:
+    with tf.compat.v1.name_scope(name) as scope:
 
         def uniform(stdev, size):
             if _weights_stdev is not None:
@@ -105,4 +105,4 @@ def Embedding(
             name+'.g',
             weight_values)
 
-        return tf.nn.embedding_lookup(emb,indices)
+        return tf.compat.v1.nn.embedding_lookup(emb,indices)

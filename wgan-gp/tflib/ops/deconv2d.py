@@ -34,7 +34,7 @@ def Deconv2D(
     inputs: tensor of shape (batch size, height, width, input_dim)
     returns: tensor of shape (batch size, 2*height, 2*width, output_dim)
     """
-    with tf.name_scope(name) as scope:
+    with tf.compat.v1.name_scope(name) as scope:
 
         if mask_type != None:
             raise Exception('Unsupported configuration')
@@ -82,20 +82,20 @@ def Deconv2D(
                 name + '.g',
                 norm_values
             )
-            with tf.name_scope('weightnorm') as scope:
-                norms = tf.sqrt(tf.reduce_sum(tf.square(filters), reduction_indices=[0,1,3]))
-                filters = filters * tf.expand_dims(target_norms / norms, 1)
+            with tf.compat.v1.name_scope('weightnorm') as scope:
+                norms = tf.compat.v1.sqrt(tf.compat.v1.reduce_sum(tf.compat.v1.square(filters), reduction_indices=[0,1,3]))
+                filters = filters * tf.compat.v1.expand_dims(target_norms / norms, 1)
 
 
-        inputs = tf.transpose(inputs, [0,2,3,1], name='NCHW_to_NHWC')
+        inputs = tf.compat.v1.transpose(inputs, [0,2,3,1], name='NCHW_to_NHWC')
 
-        input_shape = tf.shape(inputs)
+        input_shape = tf.compat.v1.shape(inputs)
         try: # tf pre-1.0 (top) vs 1.0 (bottom)
-            output_shape = tf.pack([input_shape[0], 2*input_shape[1], 2*input_shape[2], output_dim])
+            output_shape = tf.compat.v1.pack([input_shape[0], 2*input_shape[1], 2*input_shape[2], output_dim])
         except Exception as e:
-            output_shape = tf.stack([input_shape[0], 2*input_shape[1], 2*input_shape[2], output_dim])
+            output_shape = tf.compat.v1.stack([input_shape[0], 2*input_shape[1], 2*input_shape[2], output_dim])
 
-        result = tf.nn.conv2d_transpose(
+        result = tf.compat.v1.nn.conv2d_transpose(
             value=inputs, 
             filter=filters,
             output_shape=output_shape, 
@@ -108,9 +108,9 @@ def Deconv2D(
                 name+'.Biases',
                 np.zeros(output_dim, dtype='float32')
             )
-            result = tf.nn.bias_add(result, _biases)
+            result = tf.compat.v1.nn.bias_add(result, _biases)
 
-        result = tf.transpose(result, [0,3,1,2], name='NHWC_to_NCHW')
+        result = tf.compat.v1.transpose(result, [0,3,1,2], name='NHWC_to_NCHW')
 
 
         return result

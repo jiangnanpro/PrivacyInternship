@@ -22,7 +22,7 @@ def param(name, *args, **kwargs):
 
     if name not in _params:
         kwargs['name'] = name
-        param = tf.Variable(*args, **kwargs)
+        param = tf.compat.v1.Variable(*args, **kwargs)
         param.param = True
         _params[name] = param
     result = _params[name]
