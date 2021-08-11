@@ -13,7 +13,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from tflib.utils import load_model_from_checkpoint, check_folder, visualize_gt, visualize_progress, save_files
 from tflib.nist import load_nist_images
 from tflib.qmnist import load_qmnist_attacker_evaluation_set
-#import lpips_tf
+import lpips_tf
 from tflib.gan import Generator
 
 
