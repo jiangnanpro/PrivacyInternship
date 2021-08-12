@@ -8,3 +8,5 @@ wgan-gp/samples*.png
 wgan-gp/samples/
 wgan-gp/attacks/results*/
 image_labelling.ipynb
+wgan-gp/experiments/*.pickle
+wgan-gp/attacks/tools/lpips_tensorflow/pretrained_models/

@@ -258,19 +258,19 @@ def train(IMAGES, LABELS, INPUT_WIDTH, INPUT_HEIGHT, MODEL_PATH, BATCH_SIZE=50, 
         clip_disc_weights = tf.group(*clip_ops)
 
     elif MODE == 'wgan-gp':
-        gen_cost = -tf.reduce_mean(disc_fake)
-        disc_cost = tf.reduce_mean(disc_fake) - tf.reduce_mean(disc_real)
+        gen_cost = -tf.compat.v1.reduce_mean(disc_fake)
+        disc_cost = tf.compat.v1.reduce_mean(disc_fake) - tf.compat.v1.reduce_mean(disc_real)
 
-        alpha = tf.random.uniform(
+        alpha = tf.compat.v1.random.uniform(
             shape=[BATCH_SIZE,1], 
             minval=0.,
             maxval=1.
         )
         differences = fake_data - real_data
         interpolates = real_data + (alpha*differences)
-        gradients = tf.gradients(Discriminator(interpolates), [interpolates])[0]
-        slopes = tf.sqrt(tf.reduce_sum(tf.square(gradients), reduction_indices=[1]))
-        gradient_penalty = tf.reduce_mean((slopes-1.)**2)
+        gradients = tf.compat.v1.gradients(Discriminator(interpolates), [interpolates])[0]
+        slopes = tf.compat.v1.sqrt(tf.compat.v1.reduce_sum(tf.compat.v1.square(gradients), reduction_indices=[1]))
+        gradient_penalty = tf.compat.v1.reduce_mean((slopes-1.)**2)
         disc_cost += LAMBDA*gradient_penalty
 
         if TRAIN_WITH_DP:
@@ -326,7 +326,7 @@ def train(IMAGES, LABELS, INPUT_WIDTH, INPUT_HEIGHT, MODEL_PATH, BATCH_SIZE=50, 
         clip_disc_weights = None
 
     # For saving samples
-    fixed_noise = tf.constant(np.random.normal(size=(128, 128)).astype('float32'))
+    fixed_noise = tf.compat.v1.constant(np.random.normal(size=(128, 128)).astype('float32'))
     fixed_noise_samples = Generator(128, noise=fixed_noise)
     def generate_image(frame, true_dist):
         samples = session.run(fixed_noise_samples)
@@ -397,7 +397,7 @@ def train(IMAGES, LABELS, INPUT_WIDTH, INPUT_HEIGHT, MODEL_PATH, BATCH_SIZE=50, 
 
             # Write logs every 100 iters
             if (iteration < 5) or (iteration % 100 == 99):
-                flush()
+                flush(MODEL_PATH)
 
             tick()
 
