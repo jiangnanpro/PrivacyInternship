@@ -95,7 +95,7 @@ def check_args(args):
 def optimize_z(sess, z, x, x_hat,
                init_val_ph, init_val,
                query_imgs, save_dir,
-               opt, vec_loss, vec_loss_dict):
+               opt, vec_loss, vec_loss_dict, batch_size):
     """
     z = argmin_z \lambda_1*|x_hat -x|^2  + \lambda_2 * LPIPS(x_hat,x)+ \lambda_3* L_reg
     where x_hat = G(z)
@@ -143,13 +143,13 @@ def optimize_z(sess, z, x, x_hat,
 
     ### run the optimization for all query data
     size = len(query_imgs)
-    for i in tqdm(range(size // BATCH_SIZE)):
+    for i in tqdm(range(size // batch_size)):
         save_dir_batch = os.path.join(save_dir, str(i))
         print(save_dir_batch)
 
         try:
-            x_gt = query_imgs[i * BATCH_SIZE:(i + 1) * BATCH_SIZE]
-            x_gt = x_gt.reshape(x_gt.shape[0], x_gt.shape[1], x_gt.shape[2], 1)
+            x_gt = query_imgs[i * batch_size:(i + 1) * batch_size]
+            x_gt = x_gt.reshape(x_gt.shape[0], x_gt.shape[1], x_gt.shape[2], x_gt.shape[3])
             
             if os.path.exists(save_dir_batch):
                 pass
@@ -159,7 +159,7 @@ def optimize_z(sess, z, x, x_hat,
                 ### initialize z
                 if init_val_ph is not None:
                     sess.run(tf.compat.v1.variables_initializer(vars),
-                             feed_dict={init_val_ph: init_val[i * BATCH_SIZE:(i + 1) * BATCH_SIZE]})
+                             feed_dict={init_val_ph: init_val[i * batch_size:(i + 1) * batch_size]})
                 else:
                     sess.run(tf.compat.v1.variables_initializer(vars))
 
@@ -222,32 +222,31 @@ def main():
     with tf.compat.v1.Session(config=config) as sess:
 
         ### define variables
-        global BATCH_SIZE
         BATCH_SIZE = args.batch_size
-        x = tf.compat.v1.placeholder(tf.float32, shape=(None, INPUT_WIDTH, INPUT_HEIGHT, 1), name='x')
+        x = tf.compat.v1.placeholder(tf.compat.v1.float32, shape=(None, INPUT_WIDTH, INPUT_HEIGHT, 1), name='x')
 
         ### initialization
         init_val_ph = None
         init_val = {'pos': None, 'neg': None}
         if args.initialize_type == 'zero':
-            z = tf.Variable(tf.zeros([BATCH_SIZE, Z_DIM], tf.float32), name='latent_z')
+            z = tf.compat.v1.Variable(tf.compat.v1.zeros([BATCH_SIZE, Z_DIM], tf.compat.v1.float32), name='latent_z')
         elif args.initialize_type == 'random':
             np.random.seed(RANDOM_SEED)
             init_val_np = np.random.normal(size=(Z_DIM,))
             init = np.tile(init_val_np, (BATCH_SIZE, 1)).astype(np.float32)
-            z = tf.Variable(init, name='latent_z')
+            z = tf.compat.v1.Variable(init, name='latent_z')
         elif args.initialize_type == 'nn':
             init_val['pos'] = np.load(os.path.join(args.nn_dir, 'pos_z.npy'))[:, 0, :]
             init_val['neg'] = np.load(os.path.join(args.nn_dir, 'neg_z.npy'))[:, 0, :]
-            init_val_ph = tf.placeholder(dtype=tf.float32, name='init_ph', shape=(BATCH_SIZE, Z_DIM))
-            z = tf.Variable(init_val_ph, name='latent_z')
+            init_val_ph = tf.compat.v1.placeholder(dtype=tf.compat.v1.float32, name='init_ph', shape=(BATCH_SIZE, Z_DIM))
+            z = tf.compat.v1.Variable(init_val_ph, name='latent_z')
         else:
             raise NotImplementedError
 
         ### get the reconstruction (x_hat)
         x_hat = Generator(BATCH_SIZE, noise=z)
-        x_hat = tf.reshape(x_hat, [-1, 1, INPUT_WIDTH, INPUT_HEIGHT])
-        x_hat = tf.transpose(x_hat, perm=[0, 2, 3, 1])
+        x_hat = tf.compat.v1.reshape(x_hat, [-1, 1, INPUT_WIDTH, INPUT_HEIGHT])
+        x_hat = tf.compat.v1.transpose(x_hat, perm=[0, 2, 3, 1])
 
         ### load model
         vars = [v for v in tf.compat.v1.global_variables() if 'latent_z' not in v.name]
@@ -259,12 +258,12 @@ def main():
         ### loss
         if args.distance == 'l2':
             print('use distance: l2')
-            loss_l2 = tf.reduce_mean(tf.square(x_hat - x), axis=[1, 2, 3])
+            loss_l2 = tf.compat.v1.reduce_mean(tf.compat.v1.square(x_hat - x), axis=[1, 2, 3])
             vec_loss = loss_l2
             vec_losses = {'l2': loss_l2}
         elif args.distance == 'l2-lpips':
             print('use distance: lpips + l2')
-            loss_l2 = tf.reduce_mean(tf.square(x_hat - x), axis=[1, 2, 3])
+            loss_l2 = tf.compat.v1.reduce_mean(tf.compat.v1.square(x_hat - x), axis=[1, 2, 3])
             loss_lpips = lpips_tf.lpips(x_hat, x, normalize=False, model='net-lin', net='vgg', version='0.1')
             vec_losses = {'l2': loss_l2,
                           'lpips': loss_lpips}
@@ -273,14 +272,14 @@ def main():
             raise NotImplementedError
 
         ## regularizer
-        norm = tf.reduce_sum(tf.square(z), axis=1)
+        norm = tf.compat.v1.reduce_sum(tf.compat.v1.square(z), axis=1)
         norm_penalty = (norm - Z_DIM) ** 2
 
         if args.if_norm_reg:
-            loss = tf.reduce_mean(vec_loss) + LAMBDA3 * tf.reduce_mean(norm_penalty)
+            loss = tf.compat.v1.reduce_mean(vec_loss) + LAMBDA3 * tf.compat.v1.reduce_mean(norm_penalty)
             vec_losses['norm'] = norm_penalty
         else:
-            loss = tf.reduce_mean(vec_loss)
+            loss = tf.compat.v1.reduce_mean(vec_loss)
 
         ### set up optimizer
         opt = tf.contrib.opt.ScipyOptimizerInterface(loss,
@@ -311,14 +310,14 @@ def main():
                                                      init_val_ph, init_val['pos'],
                                                      pos_query_imgs,
                                                      check_folder(os.path.join(save_dir, 'pos_results')),
-                                                     opt, vec_loss, vec_losses)
+                                                     opt, vec_loss, vec_losses, BATCH_SIZE)
         save_files(save_dir, ['pos_loss'], [query_loss])
 
         query_loss, query_z, query_xhat = optimize_z(sess, z, x, x_hat,
                                                      init_val_ph, init_val['neg'],
                                                      neg_query_imgs,
                                                      check_folder(os.path.join(save_dir, 'neg_results')),
-                                                     opt, vec_loss, vec_losses)
+                                                     opt, vec_loss, vec_losses, BATCH_SIZE)
         save_files(save_dir, ['neg_loss'], [query_loss])
 
 
