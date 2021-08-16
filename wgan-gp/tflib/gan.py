@@ -385,7 +385,7 @@ def train(IMAGES, LABELS, INPUT_WIDTH, INPUT_HEIGHT, MODEL_PATH, BATCH_SIZE=50, 
             plot('time', time.time() - start_time)
 
             # Calculate dev loss, save weights and generate samples every 10000 iters
-            if iteration % 1000 == 999:
+            if iteration % 10000 == 9999:
                 if MODEL_PATH:
                     saver.save(session, os.path.join(MODEL_PATH,'{}'.format(MODE)))
                 dev_disc_costs = []

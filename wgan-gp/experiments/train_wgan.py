@@ -62,7 +62,7 @@ for n in training_set_sizes:
     INPUT_WIDTH = 28
     OUTPUT_DIM = INPUT_HEIGHT*INPUT_WIDTH  # Number of pixels in NIST
 
-    BATCH_SIZE = min(64, int(n/128))
+    BATCH_SIZE = 32
     MODE = 'wgan-gp'
     CRITIC_ITERS = 5
     LAMBDA = 10
