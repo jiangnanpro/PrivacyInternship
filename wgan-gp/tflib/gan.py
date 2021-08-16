@@ -12,6 +12,7 @@ from tflib.ops.deconv2d import Deconv2D
 from tflib.ops.embedding import Embedding
 from tflib.plot import plot, flush, tick
 from tflib.save_images import save_images
+from tflib.utils import shuffle_in_unison
 import tflib as lib
 
 
@@ -335,13 +336,16 @@ def train(IMAGES, LABELS, INPUT_WIDTH, INPUT_HEIGHT, MODEL_PATH, BATCH_SIZE=50, 
             os.path.join(OUTPUT_IMAGES_PATH,'samples_{}_{}.png'.format(frame, MODE))
         )
 
+    dev_ratio = 0.1
+    dev_size = 0
+    while dev_size<(IMAGES.shape[0]*dev_ratio):
+        dev_size = dev_size+BATCH_SIZE
     # Dataset iterator
-    DEV_SIZE = int(IMAGES.shape[0]*0.1)
-    TRAIN_SIZE = IMAGES.shape[0]-DEV_SIZE
-    train_images = IMAGES[:TRAIN_SIZE]
-    train_labels = LABELS[:TRAIN_SIZE]
-    dev_images = IMAGES[TRAIN_SIZE:]
-    dev_labels = LABELS[TRAIN_SIZE:]
+    train_size = IMAGES.shape[0]-dev_size
+    train_images = IMAGES[:train_size]
+    train_labels = LABELS[:train_size]
+    dev_images = IMAGES[train_size:]
+    dev_labels = LABELS[train_size:]
     
     train_gen = data_generator((train_images, train_labels),BATCH_SIZE)
     dev_gen = data_generator((dev_images, dev_labels),BATCH_SIZE)
@@ -381,7 +385,7 @@ def train(IMAGES, LABELS, INPUT_WIDTH, INPUT_HEIGHT, MODEL_PATH, BATCH_SIZE=50, 
             plot('time', time.time() - start_time)
 
             # Calculate dev loss, save weights and generate samples every 10000 iters
-            if iteration % 10000 == 9999:
+            if iteration % 1000 == 999:
                 if MODEL_PATH:
                     saver.save(session, os.path.join(MODEL_PATH,'{}'.format(MODE)))
                 dev_disc_costs = []
@@ -404,16 +408,9 @@ def train(IMAGES, LABELS, INPUT_WIDTH, INPUT_HEIGHT, MODEL_PATH, BATCH_SIZE=50, 
 def data_generator(data, batch_size):
     images, targets = data
 
-    rng_state = np.random.get_state()
-    np.random.shuffle(images)
-    np.random.set_state(rng_state)
-    np.random.shuffle(targets)
+    shuffle_in_unison(images,targets)
     def get_epoch():
-        rng_state = np.random.get_state()
-        np.random.shuffle(images)
-        np.random.set_state(rng_state)
-        np.random.shuffle(targets)
-
+        shuffle_in_unison(images,targets)
         image_batches = images.reshape(-1, batch_size, int(images.shape[1]*images.shape[2]))
         target_batches = targets.reshape(-1, batch_size)
         for i in range(len(image_batches)):

@@ -14,6 +14,7 @@ tf.compat.v1.set_random_seed(2021)
 
 from tflib.gan import train
 from tflib.nist import load_nist_images
+from tflib.utils import check_folder, shuffle_in_unison
 
 """### Get qmnist-nist index correspondence"""
 
@@ -46,36 +47,22 @@ nist_images, nist_labels = load_whole_nist(nist_datapath)
 
 n_images = nist_indexes.shape[0]
 
-# Randomly selecting the images for each partition
-rng = np.random.RandomState(2021)
-random_seq = rng.choice(n_images,size=n_images, replace=False)
+shuffle_in_unison(qmnist_indexes, nist_indexes)
 
-training_set_sizes = [128]# 256]#, 412, 1024, 2048, 4096, 8192, 16384]
-sample_file = os.path.join(os.path.dirname(file_path),'sample.py')
+training_set_sizes = [128, 256, 512, 1024, 2048, 4096, 8192, 16384]
 
 for n in training_set_sizes:
 
-    defender_partition_size = n
-    reserve_partition_size = n_images-defender_partition_size
-
-    defender_partition_indexes = random_seq[0:defender_partition_size]
-    reserve_partition_indexes = random_seq[defender_partition_size:]
-
-    x_defender_nist = nist_images[nist_indexes[defender_partition_indexes]]
-    y_defender_nist = nist_labels[nist_indexes[defender_partition_indexes]].squeeze()
-    x_defender_qmnist = qmnist_images[qmnist_indexes[defender_partition_indexes]]
-    y_defender_qmnist = qmnist_labels[qmnist_indexes[defender_partition_indexes]]
-
-    x_reserve_nist = nist_images[nist_indexes[reserve_partition_indexes]]
-    y_reserve_nist = nist_labels[nist_indexes[reserve_partition_indexes]].squeeze()
-    x_reserve_qmnist = qmnist_images[qmnist_indexes[reserve_partition_indexes]]
-    y_reserve_qmnist = qmnist_labels[qmnist_indexes[reserve_partition_indexes]]
+    x_defender_nist = nist_images[nist_indexes[:n]]
+    y_defender_nist = nist_labels[nist_indexes[:n]].squeeze()
+    x_defender_qmnist = qmnist_images[qmnist_indexes[:n]]
+    y_defender_qmnist = qmnist_labels[qmnist_indexes[:n]]
 
     INPUT_HEIGHT = 28
     INPUT_WIDTH = 28
     OUTPUT_DIM = INPUT_HEIGHT*INPUT_WIDTH  # Number of pixels in NIST
 
-    BATCH_SIZE = min(64, int(defender_partition_size/128))
+    BATCH_SIZE = min(64, int(n/128))
     MODE = 'wgan-gp'
     CRITIC_ITERS = 5
     LAMBDA = 10
@@ -87,12 +74,9 @@ for n in training_set_sizes:
     MODEL_PATH_NIST = os.path.join(os.path.dirname(file_path),'models/wgan-gp_nist_{}'.format(n))
     MODEL_PATH_QMNIST = os.path.join(os.path.dirname(file_path),'models/wgan-gp_qmnist_{}'.format(n))
 
-    if not os.path.exists(MODEL_PATH_NIST):
-        os.makedirs(MODEL_PATH_NIST)
-    if not os.path.exists(MODEL_PATH_QMNIST):
-        os.makedirs(MODEL_PATH_QMNIST)
+    check_folder(MODEL_PATH_NIST)
+    check_folder(MODEL_PATH_QMNIST)
     
-
     train(x_defender_qmnist/255, y_defender_qmnist, INPUT_WIDTH, INPUT_HEIGHT, MODEL_PATH_QMNIST, 
         BATCH_SIZE, DIM, MODE, LAMBDA, CRITIC_ITERS, ITERS, TRAIN_WITH_DP)
 

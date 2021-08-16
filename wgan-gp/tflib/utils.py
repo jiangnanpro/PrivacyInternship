@@ -246,3 +246,10 @@ def crop_with_bounding_box(black_white_image, crop_margins=0):
     left_y = max(out_y-crop_margins,0)
     up_x = max(out_x-epsilon-crop_margins,0)
     return black_white_image[left_y:out_y+out_h+crop_margins, up_x:out_x+out_w+epsilon+crop_margins]
+
+def shuffle_in_unison(a, b, random_state=2021):
+    rng_state = np.random.RandomState(random_state)
+    rng_state.shuffle(a)
+    rng_state = np.random.RandomState(random_state)
+    rng_state.shuffle(b)
+    return a,b

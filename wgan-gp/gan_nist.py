@@ -164,7 +164,7 @@ def train():
             lib.plot.plot('time', time.time() - start_time)
 
             # Calculate dev loss, save weights and generate samples every 10000 iters
-            if iteration % 10000 == 9999:
+            if iteration % 100000 == 99999:
                 if MODEL_PATH:
                     saver.save(session, os.path.join(MODEL_PATH,'{}_NIST'.format(MODE)))
                 dev_disc_costs = []
