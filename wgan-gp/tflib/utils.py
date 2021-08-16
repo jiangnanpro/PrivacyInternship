@@ -164,7 +164,7 @@ def visualize_gt(imgs, save_dir):
     NROWS = int(np.ceil(float(num_imgs) / float(NCOLS)))
     for i in range(num_imgs):
         plt.subplot(NROWS, NCOLS, i + 1)
-        plt.imshow(imgs[i])
+        plt.imshow(imgs[i].squeeze())
         plt.axis('off')
     plt.savefig(os.path.join(save_dir, 'input.png'))
     plt.close()
@@ -185,7 +185,7 @@ def visualize_progress(imgs, loss, save_dir, counter):
     NROWS = int(np.ceil(float(num_imgs) / float(NCOLS)))
     for i in range(num_imgs):
         plt.subplot(NROWS, NCOLS, i + 1)
-        plt.imshow(imgs[i])
+        plt.imshow(imgs[i].squeeze())
         plt.title('loss: %.4f' % loss[i], fontdict={'fontsize': 8, 'color': 'blue'})
         plt.axis('off')
     plt.savefig(os.path.join(save_dir, 'output_%d.png' % counter))
@@ -196,7 +196,7 @@ def visualize_samples(img_r01, save_dir):
     plt.figure(figsize=(20, 20))
     for i in range(64):
         plt.subplot(8, 8, i + 1)
-        plt.imshow(img_r01[i])
+        plt.imshow(img_r01[i].squeeze())
         plt.axis('off')
     plt.tight_layout()
     plt.savefig(os.path.join(save_dir, 'samples.png'))
@@ -253,3 +253,4 @@ def shuffle_in_unison(a, b, random_state=2021):
     rng_state = np.random.RandomState(random_state)
     rng_state.shuffle(b)
     return a,b
+

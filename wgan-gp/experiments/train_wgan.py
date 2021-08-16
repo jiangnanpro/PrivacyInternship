@@ -45,8 +45,6 @@ def load_whole_nist(datapath, hsf_list=[0,1,2,3,4,6,7]):
 
 nist_images, nist_labels = load_whole_nist(nist_datapath)
 
-n_images = nist_indexes.shape[0]
-
 shuffle_in_unison(qmnist_indexes, nist_indexes)
 
 training_set_sizes = [128, 256, 512, 1024, 2048, 4096, 8192, 16384]

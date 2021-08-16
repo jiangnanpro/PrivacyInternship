@@ -12,7 +12,7 @@ import tensorflow as tf
 
 from attacks.fbb import find_knn, find_pred_z
 from tflib.nist import load_nist_images
-from tflib.utils import save_files
+from tflib.utils import save_files, check_folder
 
 """### Get qmnist-nist index correspondence"""
 
@@ -53,9 +53,9 @@ random_seq = rng.choice(n_images,size=n_images, replace=False)
 K = 5
 BATCH_SIZE = 10
 
-training_set_sizes = [128, 256, 412, 1024, 2048, 4096, 8192, 16384]
+training_set_sizes = [256]#, 256, 512, 1024, 2048, 4096, 8192, 16384]
 for n in training_set_sizes:
-    load_dir = os.path.join(os.path.dirname(file_path),'models/wgan-gp_nist{}'.format(n))
+    load_dir = os.path.join(os.path.dirname(file_path),'models/wgan-gp_qmnist_{}'.format(n))
     save_dir = os.path.join(load_dir,'mia_results/fbb')
 
     generate = np.load(os.path.join(load_dir, 'generated.npz'))
@@ -81,16 +81,18 @@ for n in training_set_sizes:
 
     ### load data
     DATA_NUM = min(n,1000)
-    pos_query_imgs = x_defender_nist[:DATA_NUM]
-    neg_query_imgs = x_reserve_nist[:DATA_NUM]
+    pos_query_imgs = x_defender_qmnist[:DATA_NUM]
+    neg_query_imgs = x_reserve_qmnist[:DATA_NUM]
 
     ### nearest neighbor search
     nn_obj = NearestNeighbors(n_neighbors=K, n_jobs=-1)
     nn_obj.fit(gen_feature)
 
+    check_folder(save_dir)
+
     ### positive query
     pos_loss, pos_idx = find_knn(nn_obj, pos_query_imgs)
-    pos_z = find_pred_z(gen_z, pos_idx)
+    pos_z = find_pred_z(gen_z, pos_idx)    
     save_files(save_dir, ['pos_loss', 'pos_idx', 'pos_z'], [pos_loss, pos_idx, pos_z])
 
     ### negative query
