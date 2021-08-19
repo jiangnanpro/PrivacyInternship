@@ -16,7 +16,7 @@ from attacks.wb import optimize_z
 from tflib.nist import load_nist_images
 import lpips_tf
 from tflib.gan import Generator
-from tflib.utils import grey2RGB, load_model_from_checkpoint, check_folder, save_files
+from tflib.utils import grey2RGB, load_model_from_checkpoint, check_folder, save_files, shuffle_in_unison
 
 """### Get qmnist-nist index correspondence"""
 
@@ -28,6 +28,8 @@ with open(nist_qmnist_indexes_datapath, 'rb') as f:
     qmnist_nist_dict = pickle.load(f)
 qmnist_indexes = qmnist_nist_dict['qmnist_indexes']
 nist_indexes = qmnist_nist_dict['nist_indexes']
+# Randomly selecting the images for each partition
+shuffle_in_unison(qmnist_indexes, nist_indexes)
 
 qmnist_data = QMNIST(qmnist_datapath, download=True, what='nist')
 qmnist_images = qmnist_data.data.numpy()
@@ -47,11 +49,7 @@ def load_whole_nist(datapath, hsf_list=[0,1,2,3,4,6,7]):
 
 nist_images, nist_labels = load_whole_nist(nist_datapath)
 
-n_images = nist_indexes.shape[0]
 
-# Randomly selecting the images for each partition
-rng = np.random.RandomState(2021)
-random_seq = rng.choice(n_images,size=n_images, replace=False)
 
 INPUT_HEIGHT = 28
 INPUT_WIDTH = 28
@@ -67,6 +65,7 @@ distance = 'l2-lpips'
 if_norm_reg = True
 
 training_set_sizes = [128, 256, 412, 1024, 2048, 4096, 8192, 16384]
+
 for n in training_set_sizes:
     load_dir = os.path.join(os.path.dirname(file_path),'models/wgan-gp_nist{}'.format(n))
     save_dir = os.path.join(load_dir,'mia_results/wb')
@@ -77,25 +76,25 @@ for n in training_set_sizes:
     gen_z = generate['noise']
     gen_feature = np.reshape(gen_imgs, [len(gen_imgs), -1])
     gen_feature = 2. * gen_feature - 1.
+    gen_feature = (gen_feature*255).astype('uint8')
 
-    defender_partition_size = n
-    reserve_partition_size = n_images-defender_partition_size
+    x_defender_nist = nist_images[nist_indexes[:n]]
+    x_defender_qmnist = qmnist_images[qmnist_indexes[:n]]
 
-    defender_partition_indexes = random_seq[0:defender_partition_size]
-    reserve_partition_indexes = random_seq[defender_partition_size:]
+    x_reserve_nist = nist_images[nist_indexes[n:]]
+    x_reserve_qmnist = qmnist_images[qmnist_indexes[n:]]
 
-    x_defender_nist = nist_images[nist_indexes[defender_partition_indexes]]
-    x_defender_qmnist = qmnist_images[qmnist_indexes[defender_partition_indexes]]
-
-    x_reserve_nist = nist_images[nist_indexes[reserve_partition_indexes]]
-    x_reserve_qmnist = qmnist_images[qmnist_indexes[reserve_partition_indexes]]
-
+    dev_ratio = 0.1
+    dev_size = 0
+    while dev_size<(n*dev_ratio):
+        dev_size = dev_size+32
     ### WHITE-BOX ATTACK
     
     ### load data
+    pos_query_imgs = x_defender_nist[:n-dev_size]
     DATA_NUM = min(n,1000)
     BATCH_SIZE = min(DATA_NUM,20)
-    pos_query_imgs = x_defender_nist[:DATA_NUM]
+    pos_query_imgs = pos_query_imgs[:DATA_NUM]
     neg_query_imgs = x_reserve_nist[:DATA_NUM]
     if distance=='l2-lpips':
         n_channels = 3

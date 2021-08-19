@@ -252,5 +252,4 @@ def shuffle_in_unison(a, b, random_state=2021):
     rng_state.shuffle(a)
     rng_state = np.random.RandomState(random_state)
     rng_state.shuffle(b)
-    return a,b
 
