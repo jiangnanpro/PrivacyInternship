@@ -64,10 +64,10 @@ initialize_type = 'zero'
 distance = 'l2-lpips'
 if_norm_reg = True
 
-training_set_sizes = [128, 256, 412, 1024, 2048, 4096, 8192, 16384]
+training_set_sizes = [128, 256, 512, 1024, 2048, 4096, 8192, 16384]
 
 for n in training_set_sizes:
-    load_dir = os.path.join(os.path.dirname(file_path),'models/wgan-gp_nist{}'.format(n))
+    load_dir = os.path.join(os.path.dirname(file_path),'models/wgan-gp_nist_{}'.format(n))
     save_dir = os.path.join(load_dir,'mia_results/wb')
     nn_dir = os.path.join(load_dir,'mia_results/fbb')
 
@@ -98,10 +98,13 @@ for n in training_set_sizes:
     neg_query_imgs = x_reserve_nist[:DATA_NUM]
     if distance=='l2-lpips':
         n_channels = 3
-        pos_query_imgs = np.apply_along_axis(grey2RGB,-1,pos_query_imgs).reshape(pos_query_imgs.shape[0],INPUT_WIDTH, INPUT_HEIGHT,3)
-        neg_query_imgs = np.apply_along_axis(grey2RGB,-1,neg_query_imgs).reshape(neg_query_imgs.shape[0],INPUT_WIDTH, INPUT_HEIGHT,3)
+        pos_query_imgs = np.apply_along_axis(grey2RGB,-1,pos_query_imgs)
+        neg_query_imgs = np.apply_along_axis(grey2RGB,-1,neg_query_imgs)
     else:
         n_channels = 1
+
+    pos_query_imgs = pos_query_imgs.reshape(pos_query_imgs.shape[0],INPUT_WIDTH, INPUT_HEIGHT,n_channels)
+    neg_query_imgs = neg_query_imgs.reshape(neg_query_imgs.shape[0],INPUT_WIDTH, INPUT_HEIGHT,n_channels)
     config = tf.compat.v1.ConfigProto()
     config.gpu_options.allow_growth = True
     with tf.compat.v1.Session(config=config) as sess:
