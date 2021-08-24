@@ -58,14 +58,14 @@ for n in training_set_sizes:
 
     INPUT_HEIGHT = 28
     INPUT_WIDTH = 28
-    OUTPUT_DIM = INPUT_HEIGHT*INPUT_WIDTH  # Number of pixels in NIST
+    OUTPUT_DIM = INPUT_HEIGHT*INPUT_WIDTH
 
     BATCH_SIZE = 32
     MODE = 'wgan-gp'
     CRITIC_ITERS = 5
     LAMBDA = 10
     DIM = 64
-    ITERS = 100000 # How many generator iterations to train for
+    ITERS = 100000
     TRAIN_WITH_DP = False
     L2_NORM_CLIP = None
     NOISE_MULTIPLIER = None
